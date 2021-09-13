@@ -19,6 +19,7 @@ fn main() -> Result<()> {
         .out_dir("src/proto")
         .compile(
             &[
+                "nomad/plugins/base/proto/base.proto",
                 "nomad/plugins/shared/hclspec/hcl_spec.proto",
                 "nomad/plugins/shared/structs/proto/attribute.proto",
             ],

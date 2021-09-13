@@ -29,3 +29,4 @@ protoc-rust = "2.0"
 
 [patch.crates-io]
 prost = { git = "https://github.com/cab/prost", branch = "default-core" }
+#prost = { path = '../prost' }

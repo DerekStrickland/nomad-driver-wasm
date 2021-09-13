@@ -4,7 +4,7 @@ pub struct TaskConfigSchemaRequest {}
 pub struct TaskConfigSchemaResponse {
     /// Spec is the configuration schema for the job driver config stanza
     #[prost(message, optional, tag = "1")]
-    pub spec: ::core::option::Option<crate::proto::hclspec::Spec>,
+    pub spec: ::core::option::Option<crate::proto::hclext::Spec>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CapabilitiesRequest {}
