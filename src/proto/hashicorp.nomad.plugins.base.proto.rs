@@ -28,7 +28,7 @@ pub struct ConfigSchemaRequest {}
 pub struct ConfigSchemaResponse {
     /// spec is the plugins configuration schema
     #[prost(message, optional, tag = "1")]
-    pub spec: ::core::option::Option<super::super::shared::hclspec::Spec>,
+    pub spec: ::core::option::Option<crate::proto::hclspec::Spec>,
 }
 /// SetConfigRequest is used to set the configuration
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -68,7 +68,7 @@ pub struct NomadDriverConfig {
 /// SetConfigResponse is used to respond to setting the configuration
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SetConfigResponse {}
-/// Type enumerates the type of plugins Nomad supports
+/// PluginType enumerates the type of plugins Nomad supports
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum PluginType {
@@ -188,5 +188,196 @@ pub mod base_plugin_client {
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
+    }
+}
+#[doc = r" Generated server implementations."]
+pub mod base_plugin_server {
+    #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
+    use tonic::codegen::*;
+    #[doc = "Generated trait containing gRPC methods that should be implemented for use with BasePluginServer."]
+    #[async_trait]
+    pub trait BasePlugin: Send + Sync + 'static {
+        #[doc = " PluginInfo describes the type and version of a plugin."]
+        async fn plugin_info(
+            &self,
+            request: tonic::Request<super::PluginInfoRequest>,
+        ) -> Result<tonic::Response<super::PluginInfoResponse>, tonic::Status>;
+        #[doc = " ConfigSchema returns the schema for parsing the plugins configuration."]
+        async fn config_schema(
+            &self,
+            request: tonic::Request<super::ConfigSchemaRequest>,
+        ) -> Result<tonic::Response<super::ConfigSchemaResponse>, tonic::Status>;
+        #[doc = " SetConfig is used to set the configuration."]
+        async fn set_config(
+            &self,
+            request: tonic::Request<super::SetConfigRequest>,
+        ) -> Result<tonic::Response<super::SetConfigResponse>, tonic::Status>;
+    }
+    #[doc = " BasePlugin is the methods that all Nomad plugins must support."]
+    #[derive(Debug)]
+    pub struct BasePluginServer<T: BasePlugin> {
+        inner: _Inner<T>,
+        accept_compression_encodings: (),
+        send_compression_encodings: (),
+    }
+    struct _Inner<T>(Arc<T>);
+    impl<T: BasePlugin> BasePluginServer<T> {
+        pub fn new(inner: T) -> Self {
+            let inner = Arc::new(inner);
+            let inner = _Inner(inner);
+            Self {
+                inner,
+                accept_compression_encodings: Default::default(),
+                send_compression_encodings: Default::default(),
+            }
+        }
+        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
+        where
+            F: tonic::service::Interceptor,
+        {
+            InterceptedService::new(Self::new(inner), interceptor)
+        }
+    }
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for BasePluginServer<T>
+    where
+        T: BasePlugin,
+        B: Body + Send + Sync + 'static,
+        B::Error: Into<StdError> + Send + 'static,
+    {
+        type Response = http::Response<tonic::body::BoxBody>;
+        type Error = Never;
+        type Future = BoxFuture<Self::Response, Self::Error>;
+        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+        fn call(&mut self, req: http::Request<B>) -> Self::Future {
+            let inner = self.inner.clone();
+            match req.uri().path() {
+                "/hashicorp.nomad.plugins.base.proto.BasePlugin/PluginInfo" => {
+                    #[allow(non_camel_case_types)]
+                    struct PluginInfoSvc<T: BasePlugin>(pub Arc<T>);
+                    impl<T: BasePlugin> tonic::server::UnaryService<super::PluginInfoRequest> for PluginInfoSvc<T> {
+                        type Response = super::PluginInfoResponse;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::PluginInfoRequest>,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).plugin_info(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = PluginInfoSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/hashicorp.nomad.plugins.base.proto.BasePlugin/ConfigSchema" => {
+                    #[allow(non_camel_case_types)]
+                    struct ConfigSchemaSvc<T: BasePlugin>(pub Arc<T>);
+                    impl<T: BasePlugin> tonic::server::UnaryService<super::ConfigSchemaRequest> for ConfigSchemaSvc<T> {
+                        type Response = super::ConfigSchemaResponse;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ConfigSchemaRequest>,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).config_schema(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ConfigSchemaSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/hashicorp.nomad.plugins.base.proto.BasePlugin/SetConfig" => {
+                    #[allow(non_camel_case_types)]
+                    struct SetConfigSvc<T: BasePlugin>(pub Arc<T>);
+                    impl<T: BasePlugin> tonic::server::UnaryService<super::SetConfigRequest> for SetConfigSvc<T> {
+                        type Response = super::SetConfigResponse;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::SetConfigRequest>,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).set_config(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = SetConfigSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                _ => Box::pin(async move {
+                    Ok(http::Response::builder()
+                        .status(200)
+                        .header("grpc-status", "12")
+                        .header("content-type", "application/grpc")
+                        .body(empty_body())
+                        .unwrap())
+                }),
+            }
+        }
+    }
+    impl<T: BasePlugin> Clone for BasePluginServer<T> {
+        fn clone(&self) -> Self {
+            let inner = self.inner.clone();
+            Self {
+                inner,
+                accept_compression_encodings: self.accept_compression_encodings,
+                send_compression_encodings: self.send_compression_encodings,
+            }
+        }
+    }
+    impl<T: BasePlugin> Clone for _Inner<T> {
+        fn clone(&self) -> Self {
+            Self(self.0.clone())
+        }
+    }
+    impl<T: std::fmt::Debug> std::fmt::Debug for _Inner<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{:?}", self.0)
+        }
+    }
+    impl<T: BasePlugin> tonic::transport::NamedService for BasePluginServer<T> {
+        const NAME: &'static str = "hashicorp.nomad.plugins.base.proto.BasePlugin";
     }
 }
