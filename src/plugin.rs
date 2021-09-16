@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::time::{Duration};
 
 use crate::proto::base::{PluginInfoResponse, PluginType};
+use crate::proto::drivers::{DriverCapabilities};
+use crate::proto::drivers::network_isolation_spec::{NetworkIsolationMode};
 use crate::proto::hclext;
 use crate::proto::hclspec::{Default, Spec};
 
@@ -133,4 +135,32 @@ impl Plugin {
     }
 }
 
+// Saving this here in case needed for future reference. Not sure if needed yet.
+fn new_with_capabilities() {
+    // Initialize the plugin
+    let plugin = Plugin::new();
+    log::info!("Plugin: {:?}", plugin);
 
+    log::info!("Starting nomad-driver-wasmtime server");
+    log::info!("Plugin Name: {}", PLUGIN_NAME );
+    log::info!("Plugin Version: {}", PLUGIN_VERSION);
+    log::info!("Fingerprint Period: {}s", FINGERPRINT_PERIOD.as_secs());
+    log::info!("Task Handle Version: {}", TASK_HANDLE_VERSION);
+
+    let driver_capabilities = DriverCapabilities{
+        send_signals: true,
+        exec: true,
+        fs_isolation: 0,
+        network_isolation_modes: vec![
+            NetworkIsolationMode::Host as i32,
+            NetworkIsolationMode::Group as i32,
+            NetworkIsolationMode::Task as i32,
+            NetworkIsolationMode::None as i32,
+        ],
+        must_create_network: false,
+        mount_configs: 0,
+        remote_tasks: false,
+    };
+
+    log::info!("Driver Capabilities: {}", driver_capabilities.exec);
+}
