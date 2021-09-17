@@ -1,21 +1,22 @@
 #![allow(dead_code)]
-mod driver;
-mod plugin;
-mod proto;
-
 use env_logger;
 use log;
 use tonic::transport::Server;
 
-use crate::proto::drivers::driver_server::{DriverServer};
-use crate::driver::WasmtimeDriver;
+use proto::drivers::driver_server::{DriverServer};
+use driver::WasmtimeDriver;
+
+mod driver;
+mod proto;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
+    log::info!("Starting nomad-driver-wasmtime server");
+
     let addr = "[::1]:5000".parse().unwrap();
-    let driver = WasmtimeDriver::default();
+    let mut driver = WasmtimeDriver::default();
 
     log::info!("Server listening on {}", addr);
 
