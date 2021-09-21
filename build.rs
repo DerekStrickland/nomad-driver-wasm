@@ -8,7 +8,7 @@ fn main() -> Result<()> {
         .type_attribute(".", "#[derive(serde::Deserialize)]")
         .extern_path(".hashicorp.nomad.plugins.shared.hclspec", "crate::proto::hclspec")
         .extern_path(".hashicorp.nomad.plugins.shared.structs", "crate::proto::structs")
-        // .extern_path(".google.protobuf", "crate::proto::protobuf")
+        .extern_path(".google.protobuf", "crate::proto::protobuf")
         .compile(
             &[
                 "nomad/plugins/base/proto/base.proto",

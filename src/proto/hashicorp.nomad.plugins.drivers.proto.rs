@@ -148,8 +148,7 @@ pub struct StopTaskRequest {
     /// the task. For example, on Unix clients, this means sending a SIGKILL to
     /// the process.
     #[prost(message, optional, tag = "2")]
-    pub timeout:
-        ::core::option::Option<super::super::super::super::super::google::protobuf::Duration>,
+    pub timeout: ::core::option::Option<crate::proto::protobuf::Duration>,
     /// Signal can be set to override the Task's configured shutdown signal
     #[prost(string, tag = "3")]
     pub signal: ::prost::alloc::string::String,
@@ -192,8 +191,7 @@ pub struct TaskStatsRequest {
     pub task_id: ::prost::alloc::string::String,
     /// CollectionInterval is the interval at which to stream stats to the caller
     #[prost(message, optional, tag = "2")]
-    pub collection_interval:
-        ::core::option::Option<super::super::super::super::super::google::protobuf::Duration>,
+    pub collection_interval: ::core::option::Option<crate::proto::protobuf::Duration>,
 }
 #[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskStatsResponse {
@@ -225,8 +223,7 @@ pub struct ExecTaskRequest {
     /// Timeout is the amount of time to wait for the command to stop.
     /// Defaults to 0 (run forever)
     #[prost(message, optional, tag = "3")]
-    pub timeout:
-        ::core::option::Option<super::super::super::super::super::google::protobuf::Duration>,
+    pub timeout: ::core::option::Option<crate::proto::protobuf::Duration>,
 }
 #[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ExecTaskResponse {
@@ -678,13 +675,11 @@ pub struct TaskStatus {
     pub state: i32,
     /// StartedAt is the timestamp when the task was started
     #[prost(message, optional, tag = "4")]
-    pub started_at:
-        ::core::option::Option<super::super::super::super::super::google::protobuf::Timestamp>,
+    pub started_at: ::core::option::Option<crate::proto::protobuf::Timestamp>,
     /// CompletedAt is the timestamp when the task exited.
     /// If the task is still running, CompletedAt will not be set
     #[prost(message, optional, tag = "5")]
-    pub completed_at:
-        ::core::option::Option<super::super::super::super::super::google::protobuf::Timestamp>,
+    pub completed_at: ::core::option::Option<crate::proto::protobuf::Timestamp>,
     /// Result is set when CompletedAt is set.
     #[prost(message, optional, tag = "6")]
     pub result: ::core::option::Option<ExitResult>,
@@ -704,8 +699,7 @@ pub struct TaskStats {
     pub id: ::prost::alloc::string::String,
     /// Timestamp for which the stats were collected
     #[prost(message, optional, tag = "2")]
-    pub timestamp:
-        ::core::option::Option<super::super::super::super::super::google::protobuf::Timestamp>,
+    pub timestamp: ::core::option::Option<crate::proto::protobuf::Timestamp>,
     /// AggResourceUsage is the aggreate usage of all processes
     #[prost(message, optional, tag = "3")]
     pub agg_resource_usage: ::core::option::Option<TaskResourceUsage>,
@@ -823,8 +817,7 @@ pub struct DriverTaskEvent {
     pub task_name: ::prost::alloc::string::String,
     /// Timestamp when the event occurred
     #[prost(message, optional, tag = "4")]
-    pub timestamp:
-        ::core::option::Option<super::super::super::super::super::google::protobuf::Timestamp>,
+    pub timestamp: ::core::option::Option<crate::proto::protobuf::Timestamp>,
     /// Message is the body of the event
     #[prost(string, tag = "5")]
     pub message: ::prost::alloc::string::String,
