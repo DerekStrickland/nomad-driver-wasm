@@ -11,3 +11,8 @@ pub mod hclspec;
 
 #[path = "hashicorp.nomad.plugins.shared.structs.rs"]
 pub mod structs;
+
+mod driversext;
+
+#[path = "google.protobuf.rs"]
+mod google_protobuf;

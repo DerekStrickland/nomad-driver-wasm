@@ -1,14 +1,14 @@
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskConfigSchemaRequest {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskConfigSchemaResponse {
     /// Spec is the configuration schema for the job driver config stanza
     #[prost(message, optional, tag = "1")]
     pub spec: ::core::option::Option<crate::proto::hclspec::Spec>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CapabilitiesRequest {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CapabilitiesResponse {
     /// Capabilities provides a way for the driver to denote if it implements
     /// non-core RPCs. Some Driver service RPCs expose additional information
@@ -17,9 +17,9 @@ pub struct CapabilitiesResponse {
     #[prost(message, optional, tag = "1")]
     pub capabilities: ::core::option::Option<DriverCapabilities>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct FingerprintRequest {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct FingerprintResponse {
     /// Attributes are key/value pairs that annotate the nomad client and can be
     /// used in scheduling constraints and affinities.
@@ -43,7 +43,18 @@ pub struct FingerprintResponse {
 }
 /// Nested message and enum types in `FingerprintResponse`.
 pub mod fingerprint_response {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        serde::Deserialize,
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration,
+    )]
     #[repr(i32)]
     pub enum HealthState {
         Undetected = 0,
@@ -51,7 +62,7 @@ pub mod fingerprint_response {
         Healthy = 2,
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct RecoverTaskRequest {
     /// TaskId is the ID of the target task
     #[prost(string, tag = "1")]
@@ -60,15 +71,15 @@ pub struct RecoverTaskRequest {
     #[prost(message, optional, tag = "2")]
     pub handle: ::core::option::Option<TaskHandle>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct RecoverTaskResponse {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct StartTaskRequest {
     /// Task configuration to launch
     #[prost(message, optional, tag = "1")]
     pub task: ::core::option::Option<TaskConfig>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct StartTaskResponse {
     /// Result is set depending on the type of error that occurred while starting
     /// a task:
@@ -94,7 +105,18 @@ pub struct StartTaskResponse {
 }
 /// Nested message and enum types in `StartTaskResponse`.
 pub mod start_task_response {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        serde::Deserialize,
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration,
+    )]
     #[repr(i32)]
     pub enum Result {
         Success = 0,
@@ -102,13 +124,13 @@ pub mod start_task_response {
         Fatal = 2,
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct WaitTaskRequest {
     /// TaskId is the ID of the target task
     #[prost(string, tag = "1")]
     pub task_id: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct WaitTaskResponse {
     /// Result is the exit status of the task
     #[prost(message, optional, tag = "1")]
@@ -117,7 +139,7 @@ pub struct WaitTaskResponse {
     #[prost(string, tag = "2")]
     pub err: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct StopTaskRequest {
     /// TaskId is the ID of the target task
     #[prost(string, tag = "1")]
@@ -126,14 +148,14 @@ pub struct StopTaskRequest {
     /// the task. For example, on Unix clients, this means sending a SIGKILL to
     /// the process.
     #[prost(message, optional, tag = "2")]
-    pub timeout: ::core::option::Option<::prost_types::Duration>,
+    pub timeout: ::core::option::Option<crate::proto::google_protobuf::Duration>,
     /// Signal can be set to override the Task's configured shutdown signal
     #[prost(string, tag = "3")]
     pub signal: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct StopTaskResponse {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct DestroyTaskRequest {
     /// TaskId is the ID of the target task
     #[prost(string, tag = "1")]
@@ -142,15 +164,15 @@ pub struct DestroyTaskRequest {
     #[prost(bool, tag = "2")]
     pub force: bool,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct DestroyTaskResponse {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct InspectTaskRequest {
     /// TaskId is the ID of the target task
     #[prost(string, tag = "1")]
     pub task_id: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct InspectTaskResponse {
     /// Task details
     #[prost(message, optional, tag = "1")]
@@ -162,24 +184,24 @@ pub struct InspectTaskResponse {
     #[prost(message, optional, tag = "3")]
     pub network_override: ::core::option::Option<NetworkOverride>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskStatsRequest {
     /// TaskId is the ID of the target task
     #[prost(string, tag = "1")]
     pub task_id: ::prost::alloc::string::String,
     /// CollectionInterval is the interval at which to stream stats to the caller
     #[prost(message, optional, tag = "2")]
-    pub collection_interval: ::core::option::Option<::prost_types::Duration>,
+    pub collection_interval: ::core::option::Option<crate::proto::google_protobuf::Duration>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskStatsResponse {
     /// Stats for the task
     #[prost(message, optional, tag = "1")]
     pub stats: ::core::option::Option<TaskStats>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskEventsRequest {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct SignalTaskRequest {
     /// TaskId is the ID of the target task
     #[prost(string, tag = "1")]
@@ -188,9 +210,9 @@ pub struct SignalTaskRequest {
     #[prost(string, tag = "2")]
     pub signal: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct SignalTaskResponse {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ExecTaskRequest {
     /// TaskId is the ID of the target task
     #[prost(string, tag = "1")]
@@ -201,9 +223,9 @@ pub struct ExecTaskRequest {
     /// Timeout is the amount of time to wait for the command to stop.
     /// Defaults to 0 (run forever)
     #[prost(message, optional, tag = "3")]
-    pub timeout: ::core::option::Option<::prost_types::Duration>,
+    pub timeout: ::core::option::Option<crate::proto::google_protobuf::Duration>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ExecTaskResponse {
     /// Stdout from the exec
     #[prost(bytes = "vec", tag = "1")]
@@ -215,14 +237,14 @@ pub struct ExecTaskResponse {
     #[prost(message, optional, tag = "3")]
     pub result: ::core::option::Option<ExitResult>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ExecTaskStreamingIoOperation {
     #[prost(bytes = "vec", tag = "1")]
     pub data: ::prost::alloc::vec::Vec<u8>,
     #[prost(bool, tag = "2")]
     pub close: bool,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ExecTaskStreamingRequest {
     #[prost(message, optional, tag = "1")]
     pub setup: ::core::option::Option<exec_task_streaming_request::Setup>,
@@ -233,7 +255,7 @@ pub struct ExecTaskStreamingRequest {
 }
 /// Nested message and enum types in `ExecTaskStreamingRequest`.
 pub mod exec_task_streaming_request {
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Setup {
         #[prost(string, tag = "1")]
         pub task_id: ::prost::alloc::string::String,
@@ -242,7 +264,7 @@ pub mod exec_task_streaming_request {
         #[prost(bool, tag = "3")]
         pub tty: bool,
     }
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct TerminalSize {
         #[prost(int32, tag = "1")]
         pub height: i32,
@@ -250,7 +272,7 @@ pub mod exec_task_streaming_request {
         pub width: i32,
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ExecTaskStreamingResponse {
     #[prost(message, optional, tag = "1")]
     pub stdout: ::core::option::Option<ExecTaskStreamingIoOperation>,
@@ -261,13 +283,13 @@ pub struct ExecTaskStreamingResponse {
     #[prost(message, optional, tag = "4")]
     pub result: ::core::option::Option<ExitResult>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CreateNetworkRequest {
     /// AllocID of the allocation the network is associated with
     #[prost(string, tag = "1")]
     pub alloc_id: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CreateNetworkResponse {
     #[prost(message, optional, tag = "1")]
     pub isolation_spec: ::core::option::Option<NetworkIsolationSpec>,
@@ -277,7 +299,7 @@ pub struct CreateNetworkResponse {
     #[prost(bool, tag = "2")]
     pub created: bool,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct DestroyNetworkRequest {
     /// AllocID of the allocation the network is associated with
     #[prost(string, tag = "1")]
@@ -285,9 +307,9 @@ pub struct DestroyNetworkRequest {
     #[prost(message, optional, tag = "2")]
     pub isolation_spec: ::core::option::Option<NetworkIsolationSpec>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct DestroyNetworkResponse {}
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct DriverCapabilities {
     /// SendSignals indicates that the driver can send process signals (ex. SIGUSR1)
     /// to the task.
@@ -318,14 +340,36 @@ pub struct DriverCapabilities {
 }
 /// Nested message and enum types in `DriverCapabilities`.
 pub mod driver_capabilities {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        serde::Deserialize,
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration,
+    )]
     #[repr(i32)]
     pub enum FsIsolation {
         None = 0,
         Chroot = 1,
         Image = 2,
     }
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        serde::Deserialize,
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration,
+    )]
     #[repr(i32)]
     pub enum MountConfigs {
         /// treated as ANY_MOUNTS for backwards compatibility
@@ -333,7 +377,7 @@ pub mod driver_capabilities {
         NoMounts = 1,
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NetworkIsolationSpec {
     #[prost(
         enumeration = "network_isolation_spec::NetworkIsolationMode",
@@ -350,7 +394,18 @@ pub struct NetworkIsolationSpec {
 }
 /// Nested message and enum types in `NetworkIsolationSpec`.
 pub mod network_isolation_spec {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        serde::Deserialize,
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration,
+    )]
     #[repr(i32)]
     pub enum NetworkIsolationMode {
         Host = 0,
@@ -359,14 +414,14 @@ pub mod network_isolation_spec {
         None = 3,
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct HostsConfig {
     #[prost(string, tag = "1")]
     pub hostname: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub address: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct DnsConfig {
     #[prost(string, repeated, tag = "1")]
     pub servers: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
@@ -375,7 +430,7 @@ pub struct DnsConfig {
     #[prost(string, repeated, tag = "3")]
     pub options: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskConfig {
     /// Id of the task, recommended to the globally unique, must be unique to the driver.
     #[prost(string, tag = "1")]
@@ -437,7 +492,7 @@ pub struct TaskConfig {
     #[prost(message, optional, tag = "17")]
     pub dns: ::core::option::Option<DnsConfig>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Resources {
     /// AllocatedResources are the resources set for the task
     #[prost(message, optional, tag = "1")]
@@ -450,7 +505,7 @@ pub struct Resources {
     #[prost(message, repeated, tag = "3")]
     pub ports: ::prost::alloc::vec::Vec<PortMapping>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct AllocatedTaskResources {
     #[prost(message, optional, tag = "1")]
     pub cpu: ::core::option::Option<AllocatedCpuResources>,
@@ -459,19 +514,19 @@ pub struct AllocatedTaskResources {
     #[prost(message, repeated, tag = "5")]
     pub networks: ::prost::alloc::vec::Vec<NetworkResource>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct AllocatedCpuResources {
     #[prost(int64, tag = "1")]
     pub cpu_shares: i64,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct AllocatedMemoryResources {
     #[prost(int64, tag = "2")]
     pub memory_mb: i64,
     #[prost(int64, tag = "3")]
     pub memory_max_mb: i64,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NetworkResource {
     #[prost(string, tag = "1")]
     pub device: ::prost::alloc::string::String,
@@ -486,14 +541,14 @@ pub struct NetworkResource {
     #[prost(message, repeated, tag = "6")]
     pub dynamic_ports: ::prost::alloc::vec::Vec<NetworkPort>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NetworkPort {
     #[prost(string, tag = "1")]
     pub label: ::prost::alloc::string::String,
     #[prost(int32, tag = "2")]
     pub value: i32,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct PortMapping {
     #[prost(string, tag = "1")]
     pub label: ::prost::alloc::string::String,
@@ -504,7 +559,7 @@ pub struct PortMapping {
     #[prost(string, tag = "4")]
     pub host_ip: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct LinuxResources {
     /// CPU CFS (Completely Fair Scheduler) period. Default: 0 (not specified)
     #[prost(int64, tag = "1")]
@@ -533,7 +588,7 @@ pub struct LinuxResources {
     #[prost(double, tag = "8")]
     pub percent_ticks: f64,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Mount {
     /// TaskPath is the file path within the task directory to mount to
     #[prost(string, tag = "1")]
@@ -545,7 +600,7 @@ pub struct Mount {
     #[prost(bool, tag = "3")]
     pub readonly: bool,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Device {
     /// TaskPath is the file path within the task to mount the device to
     #[prost(string, tag = "1")]
@@ -564,7 +619,7 @@ pub struct Device {
     pub cgroup_permissions: ::prost::alloc::string::String,
 }
 /// TaskHandle is created when starting a task and is used to recover task
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskHandle {
     /// Version is used by the driver to version the DriverState schema.
     /// Version 0 is reserved by Nomad and should not be used.
@@ -582,7 +637,7 @@ pub struct TaskHandle {
 }
 /// NetworkOverride contains network settings which the driver may override
 /// for the task, such as when the driver is setting up the task's network.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NetworkOverride {
     /// PortMap can be set to replace ports with driver-specific mappings
     #[prost(map = "string, int32", tag = "1")]
@@ -596,7 +651,7 @@ pub struct NetworkOverride {
     pub auto_advertise: bool,
 }
 /// ExitResult contains information about the exit status of a task
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ExitResult {
     /// ExitCode returned from the task on exit
     #[prost(int32, tag = "1")]
@@ -609,7 +664,7 @@ pub struct ExitResult {
     pub oom_killed: bool,
 }
 /// TaskStatus includes information of a specific task
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskStatus {
     #[prost(string, tag = "1")]
     pub id: ::prost::alloc::string::String,
@@ -620,16 +675,16 @@ pub struct TaskStatus {
     pub state: i32,
     /// StartedAt is the timestamp when the task was started
     #[prost(message, optional, tag = "4")]
-    pub started_at: ::core::option::Option<::prost_types::Timestamp>,
+    pub started_at: ::core::option::Option<crate::proto::google_protobuf::Timestamp>,
     /// CompletedAt is the timestamp when the task exited.
     /// If the task is still running, CompletedAt will not be set
     #[prost(message, optional, tag = "5")]
-    pub completed_at: ::core::option::Option<::prost_types::Timestamp>,
+    pub completed_at: ::core::option::Option<crate::proto::google_protobuf::Timestamp>,
     /// Result is set when CompletedAt is set.
     #[prost(message, optional, tag = "6")]
     pub result: ::core::option::Option<ExitResult>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskDriverStatus {
     /// Attributes is a set of string/string key value pairs specific to the
     /// implementing driver
@@ -637,14 +692,14 @@ pub struct TaskDriverStatus {
     pub attributes:
         ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskStats {
     /// Id of the task
     #[prost(string, tag = "1")]
     pub id: ::prost::alloc::string::String,
     /// Timestamp for which the stats were collected
     #[prost(message, optional, tag = "2")]
-    pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
+    pub timestamp: ::core::option::Option<crate::proto::google_protobuf::Timestamp>,
     /// AggResourceUsage is the aggreate usage of all processes
     #[prost(message, optional, tag = "3")]
     pub agg_resource_usage: ::core::option::Option<TaskResourceUsage>,
@@ -653,7 +708,7 @@ pub struct TaskStats {
     pub resource_usage_by_pid:
         ::std::collections::HashMap<::prost::alloc::string::String, TaskResourceUsage>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct TaskResourceUsage {
     /// CPU usage stats
     #[prost(message, optional, tag = "1")]
@@ -662,7 +717,7 @@ pub struct TaskResourceUsage {
     #[prost(message, optional, tag = "2")]
     pub memory: ::core::option::Option<MemoryUsage>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CpuUsage {
     #[prost(double, tag = "1")]
     pub system_mode: f64,
@@ -682,7 +737,18 @@ pub struct CpuUsage {
 }
 /// Nested message and enum types in `CPUUsage`.
 pub mod cpu_usage {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        serde::Deserialize,
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration,
+    )]
     #[repr(i32)]
     pub enum Fields {
         SystemMode = 0,
@@ -693,7 +759,7 @@ pub mod cpu_usage {
         Percent = 5,
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct MemoryUsage {
     #[prost(uint64, tag = "1")]
     pub rss: u64,
@@ -715,7 +781,18 @@ pub struct MemoryUsage {
 }
 /// Nested message and enum types in `MemoryUsage`.
 pub mod memory_usage {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        serde::Deserialize,
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration,
+    )]
     #[repr(i32)]
     pub enum Fields {
         Rss = 0,
@@ -727,7 +804,7 @@ pub mod memory_usage {
         Swap = 6,
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct DriverTaskEvent {
     /// TaskId is the id of the task for the event
     #[prost(string, tag = "1")]
@@ -740,7 +817,7 @@ pub struct DriverTaskEvent {
     pub task_name: ::prost::alloc::string::String,
     /// Timestamp when the event occurred
     #[prost(message, optional, tag = "4")]
-    pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
+    pub timestamp: ::core::option::Option<crate::proto::google_protobuf::Timestamp>,
     /// Message is the body of the event
     #[prost(string, tag = "5")]
     pub message: ::prost::alloc::string::String,
@@ -749,7 +826,18 @@ pub struct DriverTaskEvent {
     pub annotations:
         ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[derive(
+    serde::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    ::prost::Enumeration,
+)]
 #[repr(i32)]
 pub enum TaskState {
     Unknown = 0,

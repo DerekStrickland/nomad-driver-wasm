@@ -1,10 +1,13 @@
 #![allow(unused_variables)]
 use std::collections::HashMap;
-use log;
-use rmp_serde;
+use std::ops::{Deref};
 use std::pin::Pin;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration};
 use tonic::{Request, Response, Status, Streaming};
+
+use log;
+use rmp_serde;
 
 use crate::proto::base::{ConfigSchemaRequest, ConfigSchemaResponse, NomadConfig, PluginInfoRequest, PluginInfoResponse, PluginType, SetConfigRequest, SetConfigResponse};
 use crate::proto::base::base_plugin_server::{BasePlugin};
@@ -15,20 +18,20 @@ use crate::proto::hclext;
 use crate::proto::hclspec::{Default, Spec};
 
 pub struct WasmtimeDriver {
-    config_schema: Spec,
+    config_schema: Arc<Mutex<Spec>>,
     driver_capabilities: DriverCapabilities,
-    nomad_config: NomadConfig,
-    plugin_api_version: String,
+    nomad_config: Arc<Mutex<NomadConfig>>,
+    plugin_api_version: Arc<Mutex<String>>,
     plugin_info: PluginInfoResponse,
 }
 
 impl core::default::Default for WasmtimeDriver {
     fn default() -> Self {
         WasmtimeDriver{
-            config_schema: WasmtimeDriver::default_config_spec(),
+            config_schema: Arc::new(Mutex::new(WasmtimeDriver::default_config_spec())),
             driver_capabilities: WasmtimeDriver::default_driver_capabilities(),
-            nomad_config: NomadConfig { driver: None },
-            plugin_api_version: String::from("0.1.0"),
+            nomad_config: Arc::new(Mutex::new(NomadConfig { driver: None })),
+            plugin_api_version: Arc::new(Mutex::new(String::from("0.1.0"))),
             plugin_info: WasmtimeDriver::default_plugin_info()
         }
     }
@@ -44,7 +47,7 @@ impl BasePlugin for WasmtimeDriver {
     async fn config_schema(&self, request: Request<ConfigSchemaRequest>) -> Result<Response<ConfigSchemaResponse>, Status> {
         log::info!("Received ConfigSchemaRequest");
         Ok(tonic::Response::new(ConfigSchemaResponse {
-            spec: Some(self.config_schema.clone())
+            spec: Some(self.config_schema.lock().unwrap().deref().clone())
         }))
     }
 
@@ -53,35 +56,34 @@ impl BasePlugin for WasmtimeDriver {
 
         let request_ref = request.get_ref();
 
-        match rmp_serde::from_slice(request_ref.msgpack_config.as_slice()).unwrap() {
-            Some(config_schema) => {
-                &self.config_schema = config_schema;
-            },
-            None => {
+        if let Ok(mut config_schema) = &self.config_schema.lock() {
+            *config_schema = rmp_serde::from_slice(request_ref.msgpack_config.as_slice()).or_else(|e| {
                 Err(Status::invalid_argument("msgpack_config"))
+            })?;
+        } else {
+            panic!("WasmtimeDriver::set_config() tried to lock a poisoned mutex: config_schema");
+        }
+
+        if let Ok(mut nomad_config) = &self.nomad_config.lock() {
+            match request_ref.clone().nomad_config {
+                Some(c) => *nomad_config = c,
+                None => return Err(Status::invalid_argument("nomad_config"))
             }
+        } else {
+            panic!("WasmtimeDriver::set_config() tried to lock a poisoned mutex: nomad_config");
         }
 
-        match request_ref.nomad_config.unwrap() {
-            Some(nomad_config) => {
-                &self.nomad_config = nomad_config;
-            },
-            None => {
-                log::error!("nomad_config empty");
-                Err(Status::invalid_argument("nomad_config"))
-            },
-            Err(error) => {
-                log::error!("error unwrapping nomad_config: {}", error);
-                Err(Status::invalid_argument("nomad_config"))
+        // &self.plugin_api_version.lock()?.deref_mut() = request.plugin_api_version;
+        if let Ok(mut plugin_api_version) = &self.plugin_api_version.lock() {
+            let pav = request_ref.clone().plugin_api_version;
+            if pav.is_empty() {
+                log::error!("plugin_api_version is required");
+                return Err(Status::invalid_argument("plugin_api_version"));
             }
+            *plugin_api_version = pav;
+        } else {
+            panic!("WasmtimeDriver::set_config() tried to lock a poisoned mutex: plugin_api_version");
         }
-
-        if request_ref.plugin_api_version.is_empty() {
-            log::error!("plugin_api_version is required");
-            Err(Status::invalid_argument("plugin_api_version"))
-        }
-
-        &self.plugin_api_version = &request_ref.plugin_api_version;
 
         Ok(tonic::Response::new(SetConfigResponse{}))
     }

@@ -1,9 +1,9 @@
 /// PluginInfoRequest is used to request the plugins basic information.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct PluginInfoRequest {}
 /// PluginInfoResponse returns basic information about the plugin such
 /// that Nomad can decide whether to load the plugin or not.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct PluginInfoResponse {
     /// type indicates what type of plugin this is.
     #[prost(enumeration = "PluginType", tag = "1")]
@@ -21,17 +21,17 @@ pub struct PluginInfoResponse {
     pub name: ::prost::alloc::string::String,
 }
 /// ConfigSchemaRequest is used to request the configurations schema.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ConfigSchemaRequest {}
 /// ConfigSchemaResponse returns the plugins configuration schema.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ConfigSchemaResponse {
     /// spec is the plugins configuration schema
     #[prost(message, optional, tag = "1")]
     pub spec: ::core::option::Option<crate::proto::hclspec::Spec>,
 }
 /// SetConfigRequest is used to set the configuration
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct SetConfigRequest {
     /// msgpack_config is the configuration encoded as MessagePack.
     #[prost(bytes = "vec", tag = "1")]
@@ -44,7 +44,7 @@ pub struct SetConfigRequest {
     pub plugin_api_version: ::prost::alloc::string::String,
 }
 /// NomadConfig is the client configuration sent to all plugins
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NomadConfig {
     /// driver specific configuration sent to all plugins
     #[prost(message, optional, tag = "1")]
@@ -52,7 +52,7 @@ pub struct NomadConfig {
 }
 /// NomadDriverConfig is the driver specific client configuration sent to all
 /// driver plugins
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct NomadDriverConfig {
     /// ClientMaxPort is the upper range of the ports that the client uses for
     /// communicating with plugin subsystems over loopback
@@ -66,10 +66,21 @@ pub struct NomadDriverConfig {
     pub client_min_port: u32,
 }
 /// SetConfigResponse is used to respond to setting the configuration
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct SetConfigResponse {}
 /// PluginType enumerates the type of plugins Nomad supports
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[derive(
+    serde::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    ::prost::Enumeration,
+)]
 #[repr(i32)]
 pub enum PluginType {
     Unknown = 0,

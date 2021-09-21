@@ -1,6 +1,6 @@
 /// Attribute is used to describe the value of an attribute, optionally
 /// specifying units
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(::serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Attribute {
     /// unit gives the unit type: MHz, MB, etc.
     #[prost(string, tag = "5")]
@@ -10,7 +10,7 @@ pub struct Attribute {
 }
 /// Nested message and enum types in `Attribute`.
 pub mod attribute {
-    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[derive(::serde::Deserialize, Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         /// float_val exposes a floating point value.
         #[prost(double, tag = "1")]
