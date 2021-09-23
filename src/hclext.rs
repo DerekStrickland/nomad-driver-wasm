@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use super::hclspec::{
-    Array, Attr, BlockAttrs, BlockList, BlockMap, BlockSet, Default, Literal, Object, Spec,
+use crate::proto::hashicorp::nomad::plugins::shared::hclspec::{
+    Array, Attr, Block, BlockAttrs, BlockList, BlockMap, BlockSet, Default, Literal, Object, Spec,
 };
 
-use super::hclspec::spec::Block as BlockEnum;
+use crate::proto::hashicorp::nomad::plugins::shared::hclspec::spec::Block as BlockEnum;
 
 pub fn object_spec(obj: Object) -> Spec {
     Spec {
@@ -24,7 +24,7 @@ pub fn attr_spec(attr: Attr) -> Spec {
     }
 }
 
-pub fn block_spec(block: super::hclspec::Block) -> Spec {
+pub fn block_spec(block: Block) -> Spec {
     Spec {
         block: Some(BlockEnum::BlockValue(Box::from(block))),
     }
@@ -80,7 +80,7 @@ pub fn new_attr_spec(name: String, attr_type: String, required: bool) -> Spec {
 }
 
 pub fn new_block_spec(name: String, required: bool, nested: Spec) -> Spec {
-    block_spec(super::hclspec::Block {
+    block_spec(Block {
         name,
         required,
         nested: Some(Box::from(nested)),

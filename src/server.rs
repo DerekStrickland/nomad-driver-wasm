@@ -3,11 +3,12 @@ use env_logger;
 use log;
 use tonic::transport::Server;
 
-use proto::drivers::driver_server::{DriverServer};
 use driver::WasmtimeDriver;
+use proto::hashicorp::nomad::plugins::drivers::proto::driver_server::{DriverServer};
 
 mod driver;
 mod proto;
+mod hclext;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Starting nomad-driver-wasmtime server");
 
     let addr = "[::1]:5000".parse().unwrap();
-    let mut driver = WasmtimeDriver::default();
+    let driver = WasmtimeDriver::default();
 
     log::info!("Server listening on {}", addr);
 

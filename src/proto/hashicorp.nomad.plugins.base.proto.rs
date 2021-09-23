@@ -28,7 +28,7 @@ pub struct ConfigSchemaRequest {}
 pub struct ConfigSchemaResponse {
     /// spec is the plugins configuration schema
     #[prost(message, optional, tag = "1")]
-    pub spec: ::core::option::Option<crate::proto::hclspec::Spec>,
+    pub spec: ::core::option::Option<super::super::shared::hclspec::Spec>,
 }
 /// SetConfigRequest is used to set the configuration
 #[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]

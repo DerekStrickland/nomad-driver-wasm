@@ -1,16 +1,29 @@
-#[path = "hashicorp.nomad.plugins.base.proto.rs"]
-pub mod base;
-
-#[path = "hashicorp.nomad.plugins.drivers.proto.rs"]
-pub mod drivers;
-
-pub mod hclext;
-
-#[path = "hashicorp.nomad.plugins.shared.hclspec.rs"]
-pub mod hclspec;
-
-#[path = "google.protobuf.rs"]
-pub mod protobuf;
-
-#[path = "hashicorp.nomad.plugins.shared.structs.rs"]
-pub mod structs;
+pub mod hashicorp {
+    pub mod nomad {
+        pub mod plugins {
+            pub mod shared {
+                pub mod hclspec {
+                    include!("hashicorp.nomad.plugins.shared.hclspec.rs");
+                }
+                pub mod structs {
+                    include!("hashicorp.nomad.plugins.shared.structs.rs");
+                }
+            }
+            pub mod drivers {
+                pub mod proto {
+                    include!("hashicorp.nomad.plugins.drivers.proto.rs");
+                }
+            }
+            pub mod base {
+                pub mod proto {
+                    include!("hashicorp.nomad.plugins.base.proto.rs");
+                }
+            }
+        }
+    }
+}
+pub mod google {
+    pub mod protobuf {
+        include!("google.protobuf.rs");
+    }
+}

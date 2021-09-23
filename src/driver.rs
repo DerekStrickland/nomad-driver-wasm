@@ -9,13 +9,13 @@ use tonic::{Request, Response, Status, Streaming};
 use log;
 use rmp_serde;
 
-use crate::proto::base::{ConfigSchemaRequest, ConfigSchemaResponse, NomadConfig, PluginInfoRequest, PluginInfoResponse, PluginType, SetConfigRequest, SetConfigResponse};
-use crate::proto::base::base_plugin_server::{BasePlugin};
-use crate::proto::drivers::{DriverCapabilities, ExecTaskStreamingResponse, TaskConfigSchemaRequest, TaskConfigSchemaResponse, CapabilitiesRequest, CapabilitiesResponse, FingerprintRequest, RecoverTaskRequest, RecoverTaskResponse, StartTaskRequest, StartTaskResponse, WaitTaskRequest, WaitTaskResponse, StopTaskRequest, StopTaskResponse, DestroyTaskRequest, DestroyTaskResponse, InspectTaskRequest, InspectTaskResponse, TaskStatsRequest, TaskEventsRequest, SignalTaskRequest, SignalTaskResponse, ExecTaskRequest, ExecTaskResponse, ExecTaskStreamingRequest, CreateNetworkRequest, CreateNetworkResponse, DestroyNetworkRequest, DestroyNetworkResponse, DriverTaskEvent, TaskStatsResponse, FingerprintResponse};
-use crate::proto::drivers::driver_server::{Driver};
-use crate::proto::drivers::network_isolation_spec::{NetworkIsolationMode};
-use crate::proto::hclext;
-use crate::proto::hclspec::{Default, Spec};
+use crate::proto::hashicorp::nomad::plugins::base::proto::{ConfigSchemaRequest, ConfigSchemaResponse, NomadConfig, PluginInfoRequest, PluginInfoResponse, PluginType, SetConfigRequest, SetConfigResponse};
+use crate::proto::hashicorp::nomad::plugins::base::proto::base_plugin_server::{BasePlugin};
+use crate::proto::hashicorp::nomad::plugins::drivers::proto::{DriverCapabilities, ExecTaskStreamingResponse, TaskConfigSchemaRequest, TaskConfigSchemaResponse, CapabilitiesRequest, CapabilitiesResponse, FingerprintRequest, RecoverTaskRequest, RecoverTaskResponse, StartTaskRequest, StartTaskResponse, WaitTaskRequest, WaitTaskResponse, StopTaskRequest, StopTaskResponse, DestroyTaskRequest, DestroyTaskResponse, InspectTaskRequest, InspectTaskResponse, TaskStatsRequest, TaskEventsRequest, SignalTaskRequest, SignalTaskResponse, ExecTaskRequest, ExecTaskResponse, ExecTaskStreamingRequest, CreateNetworkRequest, CreateNetworkResponse, DestroyNetworkRequest, DestroyNetworkResponse, DriverTaskEvent, TaskStatsResponse, FingerprintResponse};
+use crate::proto::hashicorp::nomad::plugins::drivers::proto::driver_server::{Driver};
+use crate::proto::hashicorp::nomad::plugins::drivers::proto::network_isolation_spec::{NetworkIsolationMode};
+use crate::hclext;
+use crate::proto::hashicorp::nomad::plugins::shared::hclspec::{Default, Spec};
 
 pub struct WasmtimeDriver {
     config_schema: Arc<Mutex<Spec>>,
@@ -56,34 +56,39 @@ impl BasePlugin for WasmtimeDriver {
 
         let request_ref = request.get_ref();
 
-        if let Ok(mut config_schema) = &self.config_schema.lock() {
-            *config_schema = rmp_serde::from_slice(request_ref.msgpack_config.as_slice()).or_else(|e| {
-                Err(Status::invalid_argument("msgpack_config"))
-            })?;
-        } else {
-            panic!("WasmtimeDriver::set_config() tried to lock a poisoned mutex: config_schema");
+        if request_ref.msgpack_config.is_empty() {
+            log::error!("msgpack_config is required");
+            return Err(Status::invalid_argument("msgpack_config"));
         }
 
-        if let Ok(mut nomad_config) = &self.nomad_config.lock() {
-            match request_ref.clone().nomad_config {
-                Some(c) => *nomad_config = c,
-                None => return Err(Status::invalid_argument("nomad_config"))
-            }
-        } else {
-            panic!("WasmtimeDriver::set_config() tried to lock a poisoned mutex: nomad_config");
+        if request_ref.nomad_config.is_none() {
+            log::error!("nomad_config is required");
+            return Err(Status::invalid_argument("nomad_config"));
         }
 
-        // &self.plugin_api_version.lock()?.deref_mut() = request.plugin_api_version;
-        if let Ok(mut plugin_api_version) = &self.plugin_api_version.lock() {
-            let pav = request_ref.clone().plugin_api_version;
-            if pav.is_empty() {
-                log::error!("plugin_api_version is required");
-                return Err(Status::invalid_argument("plugin_api_version"));
-            }
-            *plugin_api_version = pav;
-        } else {
-            panic!("WasmtimeDriver::set_config() tried to lock a poisoned mutex: plugin_api_version");
+        if request_ref.plugin_api_version.is_empty() {
+            log::error!("plugin_api_version is required");
+            return Err(Status::invalid_argument("plugin_api_version"));
         }
+
+        let config_schema = Arc::clone(&self.config_schema);
+        let mut cs = config_schema.lock().unwrap();
+
+        *cs = rmp_serde::from_slice(request_ref.msgpack_config.as_slice()).or_else(|e| {
+            Err(Status::invalid_argument("msgpack_config"))
+        })?;
+
+        let nomad_config = Arc::clone(&self.nomad_config);
+        let mut nc = nomad_config.lock().unwrap();
+
+        match request_ref.clone().nomad_config {
+            Some(c) => *nc = c,
+            None => log::error!("nomad_config is required but passed guard clause")
+        }
+
+        let plugin_api_version = Arc::clone(&self.plugin_api_version);
+        let mut pav = plugin_api_version.lock().unwrap();
+        *pav = request_ref.clone().plugin_api_version;
 
         Ok(tonic::Response::new(SetConfigResponse{}))
     }

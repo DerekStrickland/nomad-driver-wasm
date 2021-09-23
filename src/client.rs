@@ -2,11 +2,10 @@
 use env_logger;
 use log;
 
-use proto::drivers::{CapabilitiesRequest};
-use proto::drivers::driver_client::{DriverClient};
+use proto::hashicorp::nomad::plugins::drivers::proto::{CapabilitiesRequest, DriverCapabilities};
+use proto::hashicorp::nomad::plugins::drivers::proto::driver_client::{DriverClient};
 
 mod proto;
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,7 +25,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     log::info!("exec: {}", response.capabilities.unwrap_or_else(|| {
         log::info!("capabilities unavailable: returning default");
-        plugin::Plugin::new().capabilities
+        DriverCapabilities{
+            exec: false,
+            fs_isolation: 0,
+            mount_configs: 0,
+            must_create_network: false,
+            network_isolation_modes: vec![],
+            remote_tasks: false,
+            send_signals: false,
+        }
     }).exec);
     Ok(())
 }
