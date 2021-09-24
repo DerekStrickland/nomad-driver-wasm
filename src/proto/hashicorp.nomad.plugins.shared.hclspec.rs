@@ -1,12 +1,12 @@
 /// Spec defines the available specification types.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Spec {
     #[prost(oneof = "spec::Block", tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10")]
     pub block: ::core::option::Option<spec::Block>,
 }
 /// Nested message and enum types in `Spec`.
 pub mod spec {
-    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[derive(serde::Deserialize, Clone, PartialEq, ::prost::Oneof)]
     pub enum Block {
         #[prost(message, tag = "1")]
         Object(super::Object),
@@ -59,7 +59,7 @@ pub mod spec {
 ///if a value is not provided for the source attribute.
 ///
 ///`Attr` is a leaf spec type, so no nested spec blocks are permitted.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Attr {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -103,7 +103,7 @@ pub struct Attr {
 ///`Block` expects a single nested spec block, which is applied to the body of
 ///the block of the given type when it is present.
 ///
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Block {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -144,7 +144,7 @@ pub struct Block {
 /// `required` (optional) - If `true`, an error will be produced if a block
 ///of the given type is not present. If `false` -- the default -- an absent
 ///block will be indicated by producing `null`.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct BlockAttrs {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -193,7 +193,7 @@ pub struct BlockAttrs {
 ///`Block` expects a single nested spec block, which is applied to the body of
 ///each matching block to produce the resulting list items.
 ///
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct BlockList {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -225,7 +225,7 @@ pub struct BlockList {
 ///
 ///The contents of `BlockSet` are the same as for `BlockList`.
 ///
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct BlockSet {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -274,7 +274,7 @@ pub struct BlockSet {
 ///`Block` expects a single nested spec block, which is applied to the body of
 ///each matching block to produce the resulting map items.
 ///
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct BlockMap {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -301,7 +301,7 @@ pub struct BlockMap {
 ///that uses [functions](#spec-definition-functions).
 ///
 ///`Literal` is a leaf spec type, so no nested spec blocks are permitted.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Literal {
     #[prost(string, tag = "1")]
     pub value: ::prost::alloc::string::String,
@@ -331,7 +331,7 @@ pub struct Literal {
 ///current body since they are not evaluated unless all prior specs produce
 ///`null` as their result.
 ///
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Default {
     #[prost(message, optional, boxed, tag = "1")]
     pub primary: ::core::option::Option<::prost::alloc::boxed::Box<Spec>>,
@@ -367,7 +367,7 @@ pub struct Default {
 ///
 ///An `Object` spec block creates no validation constraints, but it passes on
 ///any validation constraints created by the nested specs.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Object {
     #[prost(map = "string, message", tag = "1")]
     pub attributes: ::std::collections::HashMap<::prost::alloc::string::String, Spec>,
@@ -390,7 +390,7 @@ pub struct Object {
 ///
 ///An `Array` spec block creates no validation constraints, but it passes on
 ///any validation constraints created by the nested specs.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Array {
     #[prost(message, repeated, tag = "1")]
     pub values: ::prost::alloc::vec::Vec<Spec>,
