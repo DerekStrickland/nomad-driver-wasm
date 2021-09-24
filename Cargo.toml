@@ -4,12 +4,6 @@ version = "0.1.0"
 authors = ["DerekStrickland <1111455+DerekStrickland@users.noreply.github.com>"]
 edition = "2018"
 
-[profile.dev]
-debug-logging=true
-
-#[features]
-#max_level_off = []
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-stream = "0.2"

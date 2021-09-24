@@ -1,6 +1,3 @@
 [submodule "nomad"]
 	path = nomad
 	url = https://github.com/hashicorp/nomad
-[submodule "protobuf"]
-	path = protobuf
-	url = https://github.com/golang/protobuf
