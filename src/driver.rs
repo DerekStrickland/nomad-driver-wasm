@@ -9,10 +9,12 @@ use tonic::{Request, Response, Status, Streaming};
 use log;
 use rmp_serde;
 
+use crate::fingerprint;
 use crate::proto::hashicorp::nomad::plugins::base::proto::{ConfigSchemaRequest, ConfigSchemaResponse, NomadConfig, PluginInfoRequest, PluginInfoResponse, PluginType, SetConfigRequest, SetConfigResponse};
 use crate::proto::hashicorp::nomad::plugins::base::proto::base_plugin_server::{BasePlugin};
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::{DriverCapabilities, ExecTaskStreamingResponse, TaskConfigSchemaRequest, TaskConfigSchemaResponse, CapabilitiesRequest, CapabilitiesResponse, FingerprintRequest, RecoverTaskRequest, RecoverTaskResponse, StartTaskRequest, StartTaskResponse, WaitTaskRequest, WaitTaskResponse, StopTaskRequest, StopTaskResponse, DestroyTaskRequest, DestroyTaskResponse, InspectTaskRequest, InspectTaskResponse, TaskStatsRequest, TaskEventsRequest, SignalTaskRequest, SignalTaskResponse, ExecTaskRequest, ExecTaskResponse, ExecTaskStreamingRequest, CreateNetworkRequest, CreateNetworkResponse, DestroyNetworkRequest, DestroyNetworkResponse, DriverTaskEvent, TaskStatsResponse, FingerprintResponse};
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::driver_server::{Driver};
+use crate::proto::hashicorp::nomad::plugins::drivers::proto::fingerprint_response::HealthState;
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::network_isolation_spec::{NetworkIsolationMode};
 use crate::hclext;
 use crate::proto::hashicorp::nomad::plugins::shared::hclspec::{Default, Spec};
@@ -113,6 +115,12 @@ impl Driver for WasmtimeDriver {
     async fn fingerprint(&self, request: Request<FingerprintRequest>) -> Result<Response<Self::FingerprintStream>, Status> {
         log::info!("Received FingerprintRequest");
         let (sender, receiver) = tokio::sync::mpsc::channel(4);
+
+        let default_response = FingerprintResponse{
+            attributes: HashMap::new(),
+            health: HealthState::Undetected as i32,
+            health_description: String::from("unknown")
+        };
 
         Ok(Response::new(Box::pin(
             tokio_stream::wrappers::ReceiverStream::new(receiver),

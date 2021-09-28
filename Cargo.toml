@@ -42,7 +42,7 @@ tonic-build = { path = '../tonic/tonic-build' }
 
 # server binary
 [[bin]]
-name = "server"
+name = "nomad-driver-wasmtime"
 path = "src/server.rs"
 
 # client binary

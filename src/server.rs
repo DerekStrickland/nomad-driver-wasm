@@ -4,9 +4,11 @@ use log;
 use tonic::transport::Server;
 
 use driver::WasmtimeDriver;
+use fingerprint::fingerprinter;
 use proto::hashicorp::nomad::plugins::drivers::proto::driver_server::{DriverServer};
 
 mod driver;
+mod fingerprint;
 mod proto;
 mod hclext;
 
