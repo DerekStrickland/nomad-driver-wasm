@@ -1,16 +1,18 @@
 use super::fingerprinter::FingerprintError;
-use super::fingerprinter::{Fingerprinter, StaticFingerprinter};
+use super::fingerprinter::Fingerprinter;
+use crate::fingerprint::fingerprinter::PeriodicFingerprinter;
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::fingerprint_response::HealthState;
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
     FingerprintRequest, FingerprintResponse,
 };
+use std::time::Duration;
 
-// HostFingerprinter is used to fingerprint the host.
-pub struct HostFingerprinter {}
+// CgroupFingerprinter tries to find a valid cgroup mount point.
+pub struct CgroupFingerprinter {}
 
-impl Fingerprinter for HostFingerprinter {
+impl Fingerprinter for CgroupFingerprinter {
     fn new() -> Self {
-        HostFingerprinter {}
+        CgroupFingerprinter {}
     }
 
     fn fingerprint(
@@ -22,10 +24,14 @@ impl Fingerprinter for HostFingerprinter {
 
         result.health = HealthState::Undetected as i32;
         result.health_description =
-            String::from("Host fingerprint not supported yet for wasm workloads");
+            String::from("Cgroup fingerprint not supported yet for wasm workloads");
 
         Ok(result)
     }
 }
 
-impl StaticFingerprinter for HostFingerprinter {}
+impl PeriodicFingerprinter for CgroupFingerprinter {
+    fn periodic(&self) -> (bool, Duration) {
+        todo!()
+    }
+}

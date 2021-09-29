@@ -3,16 +3,14 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::fingerprint_respons
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
     FingerprintRequest, FingerprintResponse,
 };
-use crate::proto::hashicorp::nomad::plugins::shared::structs::attribute::Value;
-use crate::proto::hashicorp::nomad::plugins::shared::structs::Attribute;
-use std::time::Duration;
+
+use super::fingerprinter::FingerprintError;
 
 // CniFingerprinter is used to fingerprint the host CNI configuration.
 pub struct CniFingerprinter {}
 
 impl Fingerprinter for CniFingerprinter {
-    // new is used to create an OS fingerprint
-    fn new() -> CniFingerprinter {
+    fn new() -> Self {
         CniFingerprinter {}
     }
 
@@ -20,14 +18,13 @@ impl Fingerprinter for CniFingerprinter {
         &self,
         request: FingerprintRequest,
         response: FingerprintResponse,
-    ) -> Result<FingerprintResponse, Err> {
+    ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();
 
         result.health = HealthState::Undetected as i32;
-        result.health_description =
-            String::from("CNI fingerprint not valid for wasmtime workloads");
+        result.health_description = String::from("CNI fingerprint not valid for wasm workloads");
 
-        result.Ok(result)
+        Ok(result)
     }
 }
 

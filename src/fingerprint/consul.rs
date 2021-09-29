@@ -1,18 +1,17 @@
-use super::fingerprinter::{Fingerprinter, StaticFingerprinter};
+use super::fingerprinter::FingerprintError;
+use super::fingerprinter::Fingerprinter;
+use crate::fingerprint::fingerprinter::PeriodicFingerprinter;
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::fingerprint_response::HealthState;
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
     FingerprintRequest, FingerprintResponse,
 };
-use crate::proto::hashicorp::nomad::plugins::shared::structs::attribute::Value;
-use crate::proto::hashicorp::nomad::plugins::shared::structs::Attribute;
 use std::time::Duration;
 
-// ConsulFingerprinter is used to fingerprint the host CNI configuration.
+// ConsulFingerprinter is used to fingerprint the host Consul configuration.
 pub struct ConsulFingerprinter {}
 
 impl Fingerprinter for ConsulFingerprinter {
-    // new is used to create an OS fingerprint
-    fn new() -> ConsulFingerprinter {
+    fn new() -> Self {
         ConsulFingerprinter {}
     }
 
@@ -20,15 +19,19 @@ impl Fingerprinter for ConsulFingerprinter {
         &self,
         request: FingerprintRequest,
         response: FingerprintResponse,
-    ) -> Result<FingerprintResponse, Err> {
+    ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();
 
         result.health = HealthState::Undetected as i32;
         result.health_description =
-            String::from("Consul fingerprint not supported yet for wasmtime workloads");
+            String::from("Consul fingerprint not supported yet for wasm workloads");
 
-        result.Ok(result)
+        Ok(result)
     }
 }
 
-impl StaticFingerprinter for ConsulFingerprinter {}
+impl PeriodicFingerprinter for ConsulFingerprinter {
+    fn periodic(&self) -> (bool, Duration) {
+        todo!()
+    }
+}

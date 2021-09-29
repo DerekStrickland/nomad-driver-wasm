@@ -1,54 +1,23 @@
-use std::collections::HashMap;
+use std::error::Error;
 use std::time::Duration;
 
-use super::health::*;
 use super::*;
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
     FingerprintRequest, FingerprintResponse,
 };
-use tonic::codegen::http::header::HOST;
+use std::fmt::{Debug, Display, Formatter};
 
 // EMPTY_DURATION is to be used by fingerprinters that are not periodic.
 pub const EMPTY_DURATION: Duration = Duration::new(0, 0);
 
 // TIGHTEN_NETWORK_TIMEOUTS_CONFIG is a config key that can be used during
 // tests to tighten the timeouts for fingerprinters that make network calls.
-pub const TIGHTEN_NETWORK_TIMEOUTS_CONFIG: &str = "test.tighten_network_timeouts".to_str();
+const TIGHTEN_NETWORK_TIMEOUTS_CONFIG: &str = "test.tighten_network_timeouts";
 
-// HOST_FINGERPRINTERS contains the host fingerprints which are available for a
-// given platform.
-const HOST_FINGERPRINTERS: HashMap<&str, dyn Fingerprinter> = [
-    "arch".to_string(): arch::ArchFingerprinter,
-    "consul".to_string(): NewConsulFingerprint,
-    "cni".to_string(): NewCNIFingerprint,
-    "cpu".to_string(): NewCPUFingerprint,
-    "host".to_string(): NewHostFingerprint,
-    "memory".to_string(): NewMemoryFingerprint,
-    "network".to_string(): NewNetworkFingerprint,
-    "nomad".to_string(): NewNomadFingerprint,
-    "signal".to_string(): NewSignalFingerprint,
-    "storage".to_string(): NewStorageFingerprint,
-    "vault".to_string(): NewVaultFingerprint,
-]
-.iter()
-.cloned()
-.collect();
-
-// ENV_FINGERPRINTERS contains the fingerprints that are environment specific.
-// This should run after the host fingerprinters as they may override specific
-// node resources with more detailed information.
-const ENV_FINGERPRINTERS: HashMap<&str, dyn Fingerprinter> = [
-    "env_aws": NewEnvAWSFingerprint,
-    "env_gce": NewEnvGCEFingerprint,
-    "env_azure": NewEnvAzureFingerprint,
-]
-.iter()
-.cloned()
-.collect();
-
-// // builtin_fingerprinters is a vector containing the key names of all registered
-// // fingerprints available. The order of this vector should be preserved when
-// // fingerprinting.
+// TODO: Research purpose of builtin_fingerprinters in Nomad.
+// builtin_fingerprinters is a vector containing the key names of all registered
+// fingerprints available. The order of this vector should be preserved when
+// fingerprinting.
 // pub fn builtin_fingerprinters() -> Vec<String> {
 //     let mut fingerprinters = vec![];
 //
@@ -66,18 +35,36 @@ const ENV_FINGERPRINTERS: HashMap<&str, dyn Fingerprinter> = [
 // }
 
 // new is used to instantiate and return a new fingerprint given the name
-fn new(name: String) -> Result<dyn Fingerprinter, Err> {
-    if HOST_FINGERPRINTERS.contains_key(name.as_str()) {
-        host_fingerprinter == HOST_FINGERPRINTERS[name.as_str()];
-        Ok(host_fingerprinter::new())
+fn new(name: String) -> Result<Box<dyn Fingerprinter>, FingerprintError> {
+    let name = name.as_str();
+
+    if name.is_empty() {
+        return Err(FingerprintError::new(format!(
+            "invalid fingerprinter specified: {}",
+            name
+        )));
     }
 
-    if ENV_FINGERPRINTERS.contains_key(name.as_str()) {
-        env_fingerprinter == ENV_FINGERPRINTERS[name.as_str()];
-        Ok(env_fingerprinter::new())
+    let mut fingerprinter: dyn Fingerprinter = NilFingerprinter::new();
+    match name {
+        "arch" => fingerprinter = arch::ArchFingerprinter::new(),
+        "consul" => fingerprinter = consul::ConsulFingerprinter::new(),
+        "cni" => fingerprinter = cni::CniFingerprinter::new(),
+        "cpu" => cpu::CpuFingerprinter::new(),
+        "host" => host::HostFingerprinter::new(),
+        "memory" => memory::MemoryFingerprinter::new(),
+        "network" => network::NetworkFingerprinter::new(),
+        "nomad" => nomad::NomadFingerprinter::new(),
+        "signal" => signal::SignalFingerprinter::new(),
+        "storage" => storage::StorageFingerprinter::new(),
+        "vault" => vault::VaultFingerprinter::new(),
+        // "env_aws": aws::AwsFingerprinter::new(),
+        // "env_gce": gce::GceFingerprinter::new,
+        // "env_azure": azure::AzureFingerprinter::new(),
+        _ => FingerprintError::new(format!("no match for specified fingerprinter: {}", name)),
     }
 
-    Err(format!("unknown fingerprint '{}'", name))
+    Ok(Box::new(fingerprinter))
 }
 
 // Fingerprinter is used for doing "fingerprinting" of the host to automatically
@@ -86,31 +73,32 @@ fn new(name: String) -> Result<dyn Fingerprinter, Err> {
 // Fingerprinters should implement both Fingerprinter and either PeriodicFingerprinter
 // or StaticFingerprinter so tha the periodic fn is satisfied.
 pub trait Fingerprinter {
-    fn new() -> dyn Fingerprinter;
+    fn new() -> Self
+    where
+        Self: Sized;
     // Fingerprint is used to update properties of the Node,
     // and returns a diff of updated node attributes and a potential error.
     fn fingerprint(
         &self,
         request: FingerprintRequest,
         response: FingerprintResponse,
-    ) -> Result<FingerprintResponse, Err>;
-}
-
-// PeriodicFingerprinter can be implemented on a struct that has a Fingerprint method
-// to mark it as periodic.
-pub trait PeriodicFingerprinter: Fingerprinter {
-    // Periodic is a mechanism for the fingerprinter to indicate that it should
-    // be run periodically. The return value is a boolean indicating if it
-    // should be periodic, and if true, a duration.
-    fn periodic(&self) -> (bool, Duration);
+    ) -> Result<FingerprintResponse, FingerprintError>;
 }
 
 // StaticFingerprinter can be implemented on a struct that has a Fingerprint method
-// to mark it as non-periodic.
+// to mark it as non-periodic and satisfy the required interface with this default
+// implementation.
 pub trait StaticFingerprinter: Fingerprinter {
     fn periodic(&self) -> (bool, Duration) {
         (false, Duration::new(0, 0))
     }
+}
+
+// PeriodicFingerprinter can be implemented on a struct that has a Fingerprint method
+// to mark it as periodic and requiring a custom implementation to satisfy the
+// required interface.
+pub trait PeriodicFingerprinter: Fingerprinter {
+    fn periodic(&self) -> (bool, Duration);
 }
 
 // ReloadableFingerprint can be implemented if the fingerprinter needs to be run
@@ -119,3 +107,45 @@ pub trait StaticFingerprinter: Fingerprinter {
 pub trait ReloadableFingerprinter: Fingerprinter {
     fn reload(&self);
 }
+
+struct NilFingerprinter {}
+
+impl Fingerprinter for NilFingerprinter {
+    fn new() -> Self {
+        NilFingerprinter {}
+    }
+
+    fn fingerprint(
+        &self,
+        request: FingerprintRequest,
+        response: FingerprintResponse,
+    ) -> Result<FingerprintResponse, FingerprintError> {
+        Err(FingerprintError::new(String::from(
+            "DefaultFingerprinter should never be returned",
+        )))
+    }
+}
+
+pub struct FingerprintError {
+    message: String,
+}
+
+impl FingerprintError {
+    pub fn new(message: String) -> FingerprintError {
+        FingerprintError { message }
+    }
+}
+
+impl Debug for FingerprintError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FingerprintError: {}", &self.message)
+    }
+}
+
+impl Display for FingerprintError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FingerprintError: {}", &self.message)
+    }
+}
+
+impl Error for FingerprintError {}

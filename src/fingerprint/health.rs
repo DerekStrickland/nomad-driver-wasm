@@ -1,6 +1,6 @@
+use super::fingerprinter::FingerprintError;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
-
 // HealthCheck is used for doing periodic health checks. On a given time
 // interval, a health check will be called by the fingerprint manager of the
 // node.
@@ -11,7 +11,7 @@ trait HealthCheck {
         &self,
         request: HealthCheckRequest,
         response: HealthCheckResponse,
-    ) -> Result<HealthCheckResponse, Err>;
+    ) -> Result<Box<HealthCheckResponse>, FingerprintError>;
 
     // get_health_check_interval is a mechanism for the health checker to indicate that
     // it should be run periodically. The return value is a boolean indicating
@@ -21,7 +21,7 @@ trait HealthCheck {
         &self,
         request: HealthCheckIntervalRequest,
         response: HealthCheckIntervalResponse,
-    ) -> Result<HealthCheckIntervalResponse, Err>;
+    ) -> Result<Box<HealthCheckIntervalResponse>, FingerprintError>;
 }
 
 // HealthCheckRequest is the request type for a type that fulfils the Health

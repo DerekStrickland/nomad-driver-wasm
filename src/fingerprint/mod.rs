@@ -1,4 +1,5 @@
 pub mod arch;
+pub mod cgroup;
 pub mod cni;
 pub mod consul;
 pub mod cpu;
