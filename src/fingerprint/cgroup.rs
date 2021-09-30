@@ -10,14 +10,16 @@ use std::time::Duration;
 // CgroupFingerprinter tries to find a valid cgroup mount point.
 pub struct CgroupFingerprinter {}
 
-impl Fingerprinter for CgroupFingerprinter {
+impl CgroupFingerprinter {
     fn new() -> Self {
         CgroupFingerprinter {}
     }
+}
 
+impl Fingerprinter for CgroupFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();

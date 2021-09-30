@@ -8,14 +8,16 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
 // NetworkFingerprinter is used to fingerprint the host Network configuration.
 pub struct NetworkFingerprinter {}
 
-impl Fingerprinter for NetworkFingerprinter {
-    fn new() -> Self {
+impl NetworkFingerprinter {
+    pub fn new() -> Self {
         NetworkFingerprinter {}
     }
+}
 
+impl Fingerprinter for NetworkFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();

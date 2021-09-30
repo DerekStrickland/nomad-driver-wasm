@@ -10,14 +10,16 @@ use std::time::Duration;
 // VaultFingerprinter is used to fingerprint the host Vault configuration.
 pub struct VaultFingerprinter {}
 
-impl Fingerprinter for VaultFingerprinter {
-    fn new() -> Self {
+impl VaultFingerprinter {
+    pub fn new() -> Self {
         VaultFingerprinter {}
     }
+}
 
+impl Fingerprinter for VaultFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();

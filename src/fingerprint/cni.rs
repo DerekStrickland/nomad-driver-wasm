@@ -9,14 +9,16 @@ use super::fingerprinter::FingerprintError;
 // CniFingerprinter is used to fingerprint the host CNI configuration.
 pub struct CniFingerprinter {}
 
-impl Fingerprinter for CniFingerprinter {
-    fn new() -> Self {
+impl CniFingerprinter {
+    pub fn new() -> Self {
         CniFingerprinter {}
     }
+}
 
+impl Fingerprinter for CniFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();

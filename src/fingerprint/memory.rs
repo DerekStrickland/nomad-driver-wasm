@@ -8,14 +8,16 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
 // MemoryFingerprinter is used to fingerprint the host Memory resources.
 pub struct MemoryFingerprinter {}
 
-impl Fingerprinter for MemoryFingerprinter {
-    fn new() -> Self {
+impl MemoryFingerprinter {
+    pub fn new() -> Self {
         MemoryFingerprinter {}
     }
+}
 
+impl Fingerprinter for MemoryFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();

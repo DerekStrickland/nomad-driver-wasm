@@ -9,14 +9,16 @@ use crate::proto::hashicorp::nomad::plugins::shared::structs::Attribute;
 // ArchFingerprinter is used to fingerprint the host CPU architecture
 pub struct ArchFingerprinter {}
 
-impl Fingerprinter for ArchFingerprinter {
-    fn new() -> Self {
+impl ArchFingerprinter {
+    pub fn new() -> Self {
         ArchFingerprinter {}
     }
+}
 
+impl Fingerprinter for ArchFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();

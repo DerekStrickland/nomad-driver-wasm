@@ -10,14 +10,16 @@ use std::time::Duration;
 // ConsulFingerprinter is used to fingerprint the host Consul configuration.
 pub struct ConsulFingerprinter {}
 
-impl Fingerprinter for ConsulFingerprinter {
-    fn new() -> Self {
+impl ConsulFingerprinter {
+    pub fn new() -> Self {
         ConsulFingerprinter {}
     }
+}
 
+impl Fingerprinter for ConsulFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();

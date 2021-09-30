@@ -8,14 +8,16 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
 // SignalFingerprinter is used to fingerprint the available signals.
 pub struct SignalFingerprinter {}
 
-impl Fingerprinter for SignalFingerprinter {
-    fn new() -> Self {
+impl SignalFingerprinter {
+    pub fn new() -> Self {
         SignalFingerprinter {}
     }
+}
 
+impl Fingerprinter for SignalFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();

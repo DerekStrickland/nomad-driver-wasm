@@ -7,9 +7,6 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
 };
 use std::fmt::{Debug, Display, Formatter};
 
-// EMPTY_DURATION is to be used by fingerprinters that are not periodic.
-pub const EMPTY_DURATION: Duration = Duration::new(0, 0);
-
 // TIGHTEN_NETWORK_TIMEOUTS_CONFIG is a config key that can be used during
 // tests to tighten the timeouts for fingerprinters that make network calls.
 const TIGHTEN_NETWORK_TIMEOUTS_CONFIG: &str = "test.tighten_network_timeouts";
@@ -45,26 +42,28 @@ fn new(name: String) -> Result<Box<dyn Fingerprinter>, FingerprintError> {
         )));
     }
 
-    let mut fingerprinter: dyn Fingerprinter = NilFingerprinter::new();
     match name {
-        "arch" => fingerprinter = arch::ArchFingerprinter::new(),
-        "consul" => fingerprinter = consul::ConsulFingerprinter::new(),
-        "cni" => fingerprinter = cni::CniFingerprinter::new(),
-        "cpu" => cpu::CpuFingerprinter::new(),
-        "host" => host::HostFingerprinter::new(),
-        "memory" => memory::MemoryFingerprinter::new(),
-        "network" => network::NetworkFingerprinter::new(),
-        "nomad" => nomad::NomadFingerprinter::new(),
-        "signal" => signal::SignalFingerprinter::new(),
-        "storage" => storage::StorageFingerprinter::new(),
-        "vault" => vault::VaultFingerprinter::new(),
+        "arch" => Ok(Box::new(arch::ArchFingerprinter::new())),
+        "cni" => Ok(Box::new(cni::CniFingerprinter::new())),
+        "consul" => Ok(Box::new(consul::ConsulFingerprinter::new())),
+        "cpu" => Ok(Box::new(cpu::CpuFingerprinter::new())),
+        "host" => Ok(Box::new(host::HostFingerprinter::new())),
+        "memory" => Ok(Box::new(memory::MemoryFingerprinter::new())),
+        "network" => Ok(Box::new(network::NetworkFingerprinter::new())),
+        "nomad" => Ok(Box::new(nomad::NomadFingerprinter::new())),
+        "signal" => Ok(Box::new(signal::SignalFingerprinter::new())),
+        "storage" => Ok(Box::new(storage::StorageFingerprinter::new())),
+        "vault" => Ok(Box::new(vault::VaultFingerprinter::new())),
         // "env_aws": aws::AwsFingerprinter::new(),
         // "env_gce": gce::GceFingerprinter::new,
         // "env_azure": azure::AzureFingerprinter::new(),
-        _ => FingerprintError::new(format!("no match for specified fingerprinter: {}", name)),
+        _ => Err(FingerprintError::new(format!(
+            "no match for specified fingerprinter: {}",
+            name
+        ))),
     }
 
-    Ok(Box::new(fingerprinter))
+    //Ok(Box::new(fingerprinter))
 }
 
 // Fingerprinter is used for doing "fingerprinting" of the host to automatically
@@ -73,9 +72,6 @@ fn new(name: String) -> Result<Box<dyn Fingerprinter>, FingerprintError> {
 // Fingerprinters should implement both Fingerprinter and either PeriodicFingerprinter
 // or StaticFingerprinter so tha the periodic fn is satisfied.
 pub trait Fingerprinter {
-    fn new() -> Self
-    where
-        Self: Sized;
     // Fingerprint is used to update properties of the Node,
     // and returns a diff of updated node attributes and a potential error.
     fn fingerprint(
@@ -110,15 +106,17 @@ pub trait ReloadableFingerprinter: Fingerprinter {
 
 struct NilFingerprinter {}
 
-impl Fingerprinter for NilFingerprinter {
+impl NilFingerprinter {
     fn new() -> Self {
         NilFingerprinter {}
     }
+}
 
+impl Fingerprinter for NilFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
-        response: FingerprintResponse,
+        _request: FingerprintRequest,
+        _response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         Err(FingerprintError::new(String::from(
             "DefaultFingerprinter should never be returned",

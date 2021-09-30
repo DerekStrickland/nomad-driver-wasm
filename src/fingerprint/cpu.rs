@@ -9,14 +9,16 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
 // CpuFingerprinter is used to fingerprint the host CPU resources.
 pub struct CpuFingerprinter {}
 
-impl Fingerprinter for CpuFingerprinter {
-    fn new() -> Self {
+impl CpuFingerprinter {
+    pub fn new() -> Self {
         CpuFingerprinter {}
     }
+}
 
+impl Fingerprinter for CpuFingerprinter {
     fn fingerprint(
         &self,
-        request: FingerprintRequest,
+        _request: FingerprintRequest,
         response: FingerprintResponse,
     ) -> Result<FingerprintResponse, FingerprintError> {
         let mut result = response.clone();
