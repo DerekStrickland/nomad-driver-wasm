@@ -62,8 +62,6 @@ fn new(name: String) -> Result<Box<dyn Fingerprinter>, FingerprintError> {
             name
         ))),
     }
-
-    //Ok(Box::new(fingerprinter))
 }
 
 // Fingerprinter is used for doing "fingerprinting" of the host to automatically
@@ -102,26 +100,6 @@ pub trait PeriodicFingerprinter: Fingerprinter {
 // reload then immediately Fingerprint
 pub trait ReloadableFingerprinter: Fingerprinter {
     fn reload(&self);
-}
-
-struct NilFingerprinter {}
-
-impl NilFingerprinter {
-    fn new() -> Self {
-        NilFingerprinter {}
-    }
-}
-
-impl Fingerprinter for NilFingerprinter {
-    fn fingerprint(
-        &self,
-        _request: FingerprintRequest,
-        _response: FingerprintResponse,
-    ) -> Result<FingerprintResponse, FingerprintError> {
-        Err(FingerprintError::new(String::from(
-            "DefaultFingerprinter should never be returned",
-        )))
-    }
 }
 
 pub struct FingerprintError {

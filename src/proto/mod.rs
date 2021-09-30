@@ -6,17 +6,17 @@ pub mod hashicorp {
                     include!("hashicorp.nomad.plugins.drivers.proto.rs");
                 }
             }
+            pub mod base {
+                pub mod proto {
+                    include!("hashicorp.nomad.plugins.base.proto.rs");
+                }
+            }
             pub mod shared {
                 pub mod hclspec {
                     include!("hashicorp.nomad.plugins.shared.hclspec.rs");
                 }
                 pub mod structs {
                     include!("hashicorp.nomad.plugins.shared.structs.rs");
-                }
-            }
-            pub mod base {
-                pub mod proto {
-                    include!("hashicorp.nomad.plugins.base.proto.rs");
                 }
             }
         }

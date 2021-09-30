@@ -1,5 +1,5 @@
 [package]
-name = "nomad-driver-wasmtime"
+name = "nomad-driver-wasm"
 version = "0.1.0"
 authors = ["DerekStrickland <1111455+DerekStrickland@users.noreply.github.com>"]
 edition = "2018"
