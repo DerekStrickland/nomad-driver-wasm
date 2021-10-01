@@ -151,6 +151,7 @@ impl Driver for WasmtimeDriver {
         request: Request<FingerprintRequest>,
     ) -> Result<Response<Self::FingerprintStream>, Status> {
         log::info!("Received FingerprintRequest");
+
         let (sender, receiver) = tokio::sync::mpsc::channel(4);
 
         let default_response = FingerprintResponse {
@@ -159,9 +160,29 @@ impl Driver for WasmtimeDriver {
             health_description: String::from("unknown"),
         };
 
+        tokio::spawn(async move {
+            sender.send(Ok(default_response.clone())).await.unwrap();
+        });
+
         Ok(Response::new(Box::pin(
             tokio_stream::wrappers::ReceiverStream::new(receiver),
         )))
+
+        // let (tx, rx) = mpsc::channel(4);
+        // let features = self.features.clone();
+        //
+        // tokio::spawn(async move {
+        //     for feature in &features[..] {
+        //         if in_range(feature.location.as_ref().unwrap(), request.get_ref()) {
+        //             println!("  => send {:?}", feature);
+        //             tx.send(Ok(feature.clone())).await.unwrap();
+        //         }
+        //     }
+        //
+        //     println!(" /// done sending");
+        // });
+        //
+        // Ok(Response::new(ReceiverStream::new(rx)))
     }
 
     async fn recover_task(
