@@ -4,11 +4,12 @@ use log;
 use tonic::transport::Server;
 
 use driver::WasmtimeDriver;
-use proto::hashicorp::nomad::plugins::drivers::proto::driver_server::{DriverServer};
+use proto::hashicorp::nomad::plugins::drivers::proto::driver_server::DriverServer;
 
 mod driver;
-mod proto;
+mod fingerprint;
 mod hclext;
+mod proto;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -31,8 +32,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{main};
-    use tokio_test::{assert_ok};
+    use super::main;
+    use tokio_test::assert_ok;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_main() {

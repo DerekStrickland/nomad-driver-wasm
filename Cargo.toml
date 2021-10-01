@@ -1,5 +1,5 @@
 [package]
-name = "nomad-driver-wasmtime"
+name = "nomad-driver-wasm"
 version = "0.1.0"
 authors = ["DerekStrickland <1111455+DerekStrickland@users.noreply.github.com>"]
 edition = "2018"
@@ -16,6 +16,7 @@ prost-types = "0.8.0"
 rmp-serde = "0.15.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sys-info = "0.9"
 tokio = { version = "1.11.0", features = ["rt-multi-thread", "macros", "sync", "time"] }
 tokio-stream = "0.1"
 tokio-test = "0.4.2"
@@ -42,7 +43,7 @@ tonic-build = { path = '../tonic/tonic-build' }
 
 # server binary
 [[bin]]
-name = "server"
+name = "nomad-driver-wasm"
 path = "src/server.rs"
 
 # client binary
