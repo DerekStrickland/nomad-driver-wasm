@@ -83,11 +83,6 @@ impl BasePlugin for WasmDriver {
             return Err(Status::invalid_argument("msgpack_config"));
         }
 
-        if request_ref.nomad_config.is_none() {
-            log::error!("nomad_config is required");
-            return Err(Status::invalid_argument("nomad_config"));
-        }
-
         if request_ref.plugin_api_version.is_empty() {
             log::error!("plugin_api_version is required");
             return Err(Status::invalid_argument("plugin_api_version"));
@@ -365,12 +360,8 @@ impl WasmDriver {
 
         // wasmtime runtime version
         attrs.insert(
-            String::from("wasmtime_runtime"),
-            hclext::new_attr_spec(
-                String::from("wasmtime_runtime"),
-                String::from("string"),
-                true,
-            ),
+            String::from("wasm_runtime"),
+            hclext::new_attr_spec(String::from("wasm_runtime"), String::from("string"), true),
         );
 
         // interval for collections TaskStats
@@ -408,7 +399,13 @@ impl WasmDriver {
             hclext::new_attr_spec(String::from("password"), String::from("string"), true),
         );
 
-        attrs.insert(String::from("auth"), hclext::new_object_spec(auth_map));
+        let auth_block = hclext::new_block_spec(
+            String::from("auth"),
+            false,
+            hclext::new_object_spec(auth_map),
+        );
+
+        attrs.insert(String::from("auth"), auth_block);
 
         hclext::new_object_spec(attrs)
     }
@@ -435,11 +432,11 @@ impl WasmDriver {
 // PLUGIN_NAME is the name of the plugin
 // this is used for logging and (along with the version) for uniquely
 // identifying plugin binaries fingerprinted by the client
-pub const PLUGIN_NAME: &str = "nomad-driver-wasmtime";
+pub const PLUGIN_NAME: &str = "nomad-driver-wasm";
 
 // // PLUGIN_VERSION allows the client to identify and use newer versions of
 // // an installed plugin
-pub const PLUGIN_VERSION: &str = "v0.0.1";
+pub const PLUGIN_VERSION: &str = "v0.1.0";
 
 // // FINGERPRINT_PERIOD is the interval at which the plugin will send
 // // fingerprint responses

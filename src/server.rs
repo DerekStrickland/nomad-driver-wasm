@@ -25,11 +25,12 @@ async fn driver_service_status(mut reporter: HealthReporter) {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // go-plugin requires this to be written to satisfy the handshake protocol.
+    // https://github.com/hashicorp/go-plugin/blob/master/docs/guide-plugin-write-non-go.md#4-output-handshake-information
     println!("1|2|tcp|127.0.0.1:5000|grpc");
 
     env_logger::init();
 
-    log::info!("Starting nomad-driver-wasmtime server");
+    log::info!("Starting nomad-driver-wasm server");
 
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
