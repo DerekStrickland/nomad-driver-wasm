@@ -9,14 +9,14 @@ pub mod hashicorp {
                     include!("hashicorp.nomad.plugins.shared.structs.rs");
                 }
             }
-            pub mod drivers {
-                pub mod proto {
-                    include!("hashicorp.nomad.plugins.drivers.proto.rs");
-                }
-            }
             pub mod base {
                 pub mod proto {
                     include!("hashicorp.nomad.plugins.base.proto.rs");
+                }
+            }
+            pub mod drivers {
+                pub mod proto {
+                    include!("hashicorp.nomad.plugins.drivers.proto.rs");
                 }
             }
         }

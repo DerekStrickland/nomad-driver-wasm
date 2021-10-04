@@ -30,7 +30,7 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
 };
 use crate::proto::hashicorp::nomad::plugins::shared::hclspec::{Default, Spec};
 
-pub struct WasmtimeDriver {
+pub struct WasmDriver {
     config_schema: Arc<Mutex<Spec>>,
     driver_capabilities: DriverCapabilities,
     nomad_config: Arc<Mutex<NomadConfig>>,
@@ -38,20 +38,20 @@ pub struct WasmtimeDriver {
     plugin_info: PluginInfoResponse,
 }
 
-impl core::default::Default for WasmtimeDriver {
+impl core::default::Default for WasmDriver {
     fn default() -> Self {
-        WasmtimeDriver {
-            config_schema: Arc::new(Mutex::new(WasmtimeDriver::default_config_spec())),
-            driver_capabilities: WasmtimeDriver::default_driver_capabilities(),
+        WasmDriver {
+            config_schema: Arc::new(Mutex::new(WasmDriver::default_config_spec())),
+            driver_capabilities: WasmDriver::default_driver_capabilities(),
             nomad_config: Arc::new(Mutex::new(NomadConfig { driver: None })),
             plugin_api_version: Arc::new(Mutex::new(String::from("0.1.0"))),
-            plugin_info: WasmtimeDriver::default_plugin_info(),
+            plugin_info: WasmDriver::default_plugin_info(),
         }
     }
 }
 
 #[tonic::async_trait]
-impl BasePlugin for WasmtimeDriver {
+impl BasePlugin for WasmDriver {
     async fn plugin_info(
         &self,
         request: Request<PluginInfoRequest>,
@@ -83,11 +83,6 @@ impl BasePlugin for WasmtimeDriver {
             return Err(Status::invalid_argument("msgpack_config"));
         }
 
-        if request_ref.nomad_config.is_none() {
-            log::error!("nomad_config is required");
-            return Err(Status::invalid_argument("nomad_config"));
-        }
-
         if request_ref.plugin_api_version.is_empty() {
             log::error!("plugin_api_version is required");
             return Err(Status::invalid_argument("plugin_api_version"));
@@ -116,7 +111,7 @@ impl BasePlugin for WasmtimeDriver {
 }
 
 #[tonic::async_trait]
-impl Driver for WasmtimeDriver {
+impl Driver for WasmDriver {
     async fn task_config_schema(
         &self,
         request: Request<TaskConfigSchemaRequest>,
@@ -133,7 +128,7 @@ impl Driver for WasmtimeDriver {
     ) -> Result<Response<CapabilitiesResponse>, Status> {
         log::info!("Received CapabilitiesRequest");
         Ok(tonic::Response::new(CapabilitiesResponse {
-            capabilities: Some(WasmtimeDriver::default_driver_capabilities()),
+            capabilities: Some(WasmDriver::default_driver_capabilities()),
         }))
     }
 
@@ -167,22 +162,6 @@ impl Driver for WasmtimeDriver {
         Ok(Response::new(Box::pin(
             tokio_stream::wrappers::ReceiverStream::new(receiver),
         )))
-
-        // let (tx, rx) = mpsc::channel(4);
-        // let features = self.features.clone();
-        //
-        // tokio::spawn(async move {
-        //     for feature in &features[..] {
-        //         if in_range(feature.location.as_ref().unwrap(), request.get_ref()) {
-        //             println!("  => send {:?}", feature);
-        //             tx.send(Ok(feature.clone())).await.unwrap();
-        //         }
-        //     }
-        //
-        //     println!(" /// done sending");
-        // });
-        //
-        // Ok(Response::new(ReceiverStream::new(rx)))
     }
 
     async fn recover_task(
@@ -348,7 +327,7 @@ impl Driver for WasmtimeDriver {
     }
 }
 
-impl WasmtimeDriver {
+impl WasmDriver {
     // plugin_info returns the configuration for the plugin, which will be requested
     // by Nomad during at least plugin loading.
     fn default_plugin_info() -> PluginInfoResponse {
@@ -381,12 +360,8 @@ impl WasmtimeDriver {
 
         // wasmtime runtime version
         attrs.insert(
-            String::from("wasmtime_runtime"),
-            hclext::new_attr_spec(
-                String::from("wasmtime_runtime"),
-                String::from("string"),
-                true,
-            ),
+            String::from("wasm_runtime"),
+            hclext::new_attr_spec(String::from("wasm_runtime"), String::from("string"), true),
         );
 
         // interval for collections TaskStats
@@ -424,7 +399,13 @@ impl WasmtimeDriver {
             hclext::new_attr_spec(String::from("password"), String::from("string"), true),
         );
 
-        attrs.insert(String::from("auth"), hclext::new_object_spec(auth_map));
+        let auth_block = hclext::new_block_spec(
+            String::from("auth"),
+            false,
+            hclext::new_object_spec(auth_map),
+        );
+
+        attrs.insert(String::from("auth"), auth_block);
 
         hclext::new_object_spec(attrs)
     }
@@ -451,11 +432,11 @@ impl WasmtimeDriver {
 // PLUGIN_NAME is the name of the plugin
 // this is used for logging and (along with the version) for uniquely
 // identifying plugin binaries fingerprinted by the client
-pub const PLUGIN_NAME: &str = "nomad-driver-wasmtime";
+pub const PLUGIN_NAME: &str = "nomad-driver-wasm";
 
 // // PLUGIN_VERSION allows the client to identify and use newer versions of
 // // an installed plugin
-pub const PLUGIN_VERSION: &str = "v0.0.1";
+pub const PLUGIN_VERSION: &str = "v0.1.0";
 
 // // FINGERPRINT_PERIOD is the interval at which the plugin will send
 // // fingerprint responses
