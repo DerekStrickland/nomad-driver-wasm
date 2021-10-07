@@ -6,9 +6,14 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tonic::{Request, Response, Status, Streaming};
 
-use log;
+// use log;
+// use log::LevelFilter;
+// use log4rs::append::file::FileAppender;
+// use log4rs::config::{Appender, Config, Root};
+// use log4rs::encode::pattern::PatternEncoder;
 use rmp_serde;
 
+use crate::fingerprint::fingerprinter::build_fingerprint_attrs;
 use crate::hclext;
 use crate::proto::hashicorp::nomad::plugins::base::proto::base_plugin_server::BasePlugin;
 use crate::proto::hashicorp::nomad::plugins::base::proto::{
@@ -29,6 +34,7 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
     TaskStatsRequest, TaskStatsResponse, WaitTaskRequest, WaitTaskResponse,
 };
 use crate::proto::hashicorp::nomad::plugins::shared::hclspec::{Default, Spec};
+use crate::proto::hashicorp::nomad::plugins::shared::structs::attribute::Value;
 
 pub struct WasmDriver {
     config_schema: Arc<Mutex<Spec>>,
@@ -56,7 +62,7 @@ impl BasePlugin for WasmDriver {
         &self,
         request: Request<PluginInfoRequest>,
     ) -> Result<Response<PluginInfoResponse>, Status> {
-        log::info!("Received PluginInfoRequest");
+        // log::info!("Received PluginInfoRequest");
         Ok(tonic::Response::new(self.plugin_info.clone()))
     }
 
@@ -64,7 +70,7 @@ impl BasePlugin for WasmDriver {
         &self,
         request: Request<ConfigSchemaRequest>,
     ) -> Result<Response<ConfigSchemaResponse>, Status> {
-        log::info!("Received ConfigSchemaRequest");
+        // log::info!("Received ConfigSchemaRequest");
         Ok(tonic::Response::new(ConfigSchemaResponse {
             spec: Some(self.config_schema.lock().unwrap().deref().clone()),
         }))
@@ -74,17 +80,17 @@ impl BasePlugin for WasmDriver {
         &self,
         request: Request<SetConfigRequest>,
     ) -> Result<Response<SetConfigResponse>, Status> {
-        log::info!("Received SetConfigRequest");
+        // log::info!("Received SetConfigRequest");
 
         let request_ref = request.get_ref();
 
         if request_ref.msgpack_config.is_empty() {
-            log::error!("msgpack_config is required");
+            // log::error!("msgpack_config is required");
             return Err(Status::invalid_argument("msgpack_config"));
         }
 
         if request_ref.plugin_api_version.is_empty() {
-            log::error!("plugin_api_version is required");
+            // log::error!("plugin_api_version is required");
             return Err(Status::invalid_argument("plugin_api_version"));
         }
 
@@ -116,7 +122,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<TaskConfigSchemaRequest>,
     ) -> Result<Response<TaskConfigSchemaResponse>, Status> {
-        log::info!("Received TaskConfigSchemaRequest");
+        // log::info!("Received TaskConfigSchemaRequest");
         Ok(tonic::Response::new(TaskConfigSchemaResponse {
             spec: None,
         }))
@@ -126,7 +132,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<CapabilitiesRequest>,
     ) -> Result<Response<CapabilitiesResponse>, Status> {
-        log::info!("Received CapabilitiesRequest");
+        // log::info!("Received CapabilitiesRequest");
         Ok(tonic::Response::new(CapabilitiesResponse {
             capabilities: Some(WasmDriver::default_driver_capabilities()),
         }))
@@ -145,22 +151,42 @@ impl Driver for WasmDriver {
         &self,
         request: Request<FingerprintRequest>,
     ) -> Result<Response<Self::FingerprintStream>, Status> {
-        log::info!("Received FingerprintRequest");
+        // log::info!("Received FingerprintRequest");
 
-        let (sender, receiver) = tokio::sync::mpsc::channel(4);
+        let (tx, rx) = tokio::sync::mpsc::channel(4);
 
-        let default_response = FingerprintResponse {
-            attributes: HashMap::new(),
-            health: HealthState::Undetected as i32,
-            health_description: String::from("unknown"),
+        let attrs = build_fingerprint_attrs();
+
+        let fingerprint_response = FingerprintResponse {
+            attributes: attrs.clone(),
+            health: HealthState::Healthy as i32,
+            health_description: String::from("healthy"),
         };
 
+        for (k, v) in attrs {
+            match v.value {
+                Some(Value::StringVal(val)) => {
+                    log::info!("attribute {}: {}", k, val)
+                }
+                _ => log::info!("attribute {} is not a string", k),
+            }
+        }
+
+        // log::info!("health {}", fingerprint_response.health);
+        // log::info!(
+        //     "health_description {}",
+        //     fingerprint_response.health_description
+        // );
+
         tokio::spawn(async move {
-            sender.send(Ok(default_response.clone())).await.unwrap();
+            loop {
+                tx.send(Ok(fingerprint_response.clone())).await.unwrap();
+                tokio::time::sleep(FINGERPRINT_PERIOD).await;
+            }
         });
 
         Ok(Response::new(Box::pin(
-            tokio_stream::wrappers::ReceiverStream::new(receiver),
+            tokio_stream::wrappers::ReceiverStream::new(rx),
         )))
     }
 
@@ -168,7 +194,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<RecoverTaskRequest>,
     ) -> Result<Response<RecoverTaskResponse>, Status> {
-        log::info!("Received RecoverTaskRequest");
+        // log::info!("Received RecoverTaskRequest");
         Ok(tonic::Response::new(RecoverTaskResponse {}))
     }
 
@@ -176,7 +202,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<StartTaskRequest>,
     ) -> Result<Response<StartTaskResponse>, Status> {
-        log::info!("Received StartTaskRequest");
+        // log::info!("Received StartTaskRequest");
         Ok(tonic::Response::new(StartTaskResponse {
             result: 0,
             driver_error_msg: "".to_string(),
@@ -189,7 +215,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<WaitTaskRequest>,
     ) -> Result<Response<WaitTaskResponse>, Status> {
-        log::info!("Received WaitTaskRequest");
+        // log::info!("Received WaitTaskRequest");
         Ok(tonic::Response::new(WaitTaskResponse {
             result: None,
             err: "".to_string(),
@@ -200,7 +226,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<StopTaskRequest>,
     ) -> Result<Response<StopTaskResponse>, Status> {
-        log::info!("Received StopTaskRequest");
+        // log::info!("Received StopTaskRequest");
         Ok(tonic::Response::new(StopTaskResponse {}))
     }
 
@@ -208,7 +234,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<DestroyTaskRequest>,
     ) -> Result<Response<DestroyTaskResponse>, Status> {
-        log::info!("Received DestroyTaskRequest");
+        // log::info!("Received DestroyTaskRequest");
         Ok(tonic::Response::new(DestroyTaskResponse {}))
     }
 
@@ -216,7 +242,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<InspectTaskRequest>,
     ) -> Result<Response<InspectTaskResponse>, Status> {
-        log::info!("Received InspectTaskRequest");
+        // log::info!("Received InspectTaskRequest");
         Ok(tonic::Response::new(InspectTaskResponse {
             task: None,
             driver: None,
@@ -237,7 +263,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<TaskStatsRequest>,
     ) -> Result<Response<Self::TaskStatsStream>, Status> {
-        log::info!("Received TaskStatsRequest");
+        // log::info!("Received TaskStatsRequest");
         let (sender, receiver) = tokio::sync::mpsc::channel(4);
 
         Ok(Response::new(Box::pin(
@@ -258,7 +284,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<TaskEventsRequest>,
     ) -> Result<Response<Self::TaskEventsStream>, Status> {
-        log::info!("Received TaskEventsRequest");
+        // log::info!("Received TaskEventsRequest");
         let (sender, receiver) = tokio::sync::mpsc::channel(4);
 
         Ok(Response::new(Box::pin(
@@ -270,7 +296,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<SignalTaskRequest>,
     ) -> Result<Response<SignalTaskResponse>, Status> {
-        log::info!("Received SignalTaskRequest");
+        // log::info!("Received SignalTaskRequest");
         Ok(tonic::Response::new(SignalTaskResponse {}))
     }
 
@@ -278,7 +304,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<ExecTaskRequest>,
     ) -> Result<Response<ExecTaskResponse>, Status> {
-        log::info!("Received ExecTaskRequest");
+        // log::info!("Received ExecTaskRequest");
         Ok(tonic::Response::new(ExecTaskResponse {
             stdout: vec![],
             stderr: vec![],
@@ -299,7 +325,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<Streaming<ExecTaskStreamingRequest>>,
     ) -> Result<Response<Self::ExecTaskStreamingStream>, Status> {
-        log::info!("Received ExecTaskStreamingRequest");
+        // log::info!("Received ExecTaskStreamingRequest");
         let (sender, receiver) = tokio::sync::mpsc::channel(4);
 
         Ok(Response::new(Box::pin(
@@ -311,7 +337,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<CreateNetworkRequest>,
     ) -> Result<Response<CreateNetworkResponse>, Status> {
-        log::info!("Received CreateNetworkRequest");
+        // log::info!("Received CreateNetworkRequest");
         Ok(tonic::Response::new(CreateNetworkResponse {
             isolation_spec: None,
             created: false,
@@ -322,7 +348,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<DestroyNetworkRequest>,
     ) -> Result<Response<DestroyNetworkResponse>, Status> {
-        log::info!("Received DestroyNetworkRequest");
+        // log::info!("Received DestroyNetworkRequest");
         Ok(tonic::Response::new(DestroyNetworkResponse {}))
     }
 }

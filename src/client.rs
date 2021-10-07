@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 use env_logger;
+// use env_logger::{Builder, Target};
 use log;
+// use log::LevelFilter;
 
 use proto::hashicorp::nomad::plugins::drivers::proto::driver_client::DriverClient;
 use proto::hashicorp::nomad::plugins::drivers::proto::FingerprintRequest;
@@ -11,10 +13,15 @@ mod proto;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
+    // let mut builder = Builder::from_default_env();
+    // builder.target(Target::Stdout);
+    // builder.filter_level(LevelFilter::Debug);
 
-    let channel = tonic::transport::Channel::from_static("http://[::1]:5000")
+    let channel = tonic::transport::Channel::from_static("http://0.0.0.0:5000")
         .connect()
         .await?;
+
+    log::info!("channel established");
 
     let mut client = DriverClient::new(channel);
 
@@ -49,7 +56,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client.fingerprint(fingerprint_request).await?.into_inner();
 
     while let Some(fingerprint_response) = fingerprint_response_stream.message().await? {
-        log::info!("health: {}", fingerprint_response.health);
+        log::info!(
+            "health_description: {}",
+            fingerprint_response.health_description
+        );
     }
 
     Ok(())

@@ -2,7 +2,7 @@
 
 echo "Loading plugin dir..."
 
-NOMAD_PLUGIN_DIR=${NOMAD_PLUGIN_DIR:-/opt/nomad/data/plugins}
+NOMAD_PLUGIN_DIR=${NOMAD_PLUGIN_DIR:-/opt/nomad/plugins}
 echo "Deploying to : $NOMAD_PLUGIN_DIR"
 
 if [ ! -w "$NOMAD_PLUGIN_DIR" ] ; then
