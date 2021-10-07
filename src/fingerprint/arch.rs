@@ -24,7 +24,7 @@ impl Fingerprinter for ArchFingerprinter {
         let mut result = response.clone();
 
         result.attributes.insert(
-            String::from("cpu.arch"),
+            String::from("driver.nomad-driver-wasm.cpu.arch"),
             Attribute {
                 unit: "".to_string(),
                 value: Option::from(Value::StringVal(String::from(std::env::consts::ARCH))),

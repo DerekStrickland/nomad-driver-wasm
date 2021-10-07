@@ -1,15 +1,22 @@
-use std::error::Error;
-use std::time::Duration;
-
 use super::*;
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
     FingerprintRequest, FingerprintResponse,
 };
+use crate::proto::hashicorp::nomad::plugins::shared::structs::attribute::Value;
+use crate::proto::hashicorp::nomad::plugins::shared::structs::Attribute;
+use std::collections::HashMap;
+use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
+use std::time::Duration;
 
 // TIGHTEN_NETWORK_TIMEOUTS_CONFIG is a config key that can be used during
 // tests to tighten the timeouts for fingerprinters that make network calls.
 const TIGHTEN_NETWORK_TIMEOUTS_CONFIG: &str = "test.tighten_network_timeouts";
+
+// Gets the CARGO_PKG_VERSION at the time of compilation. When using
+// ModuleVersionStrategy::WasmtimeVersion, this is the value that will be set
+// my the wasmtime::Engine metadata calculation.
+const PACKAGE_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 // TODO: Research purpose of builtin_fingerprinters in Nomad.
 // builtin_fingerprinters is a vector containing the key names of all registered
@@ -31,10 +38,32 @@ const TIGHTEN_NETWORK_TIMEOUTS_CONFIG: &str = "test.tighten_network_timeouts";
 //     fingerprints
 // }
 
-// new is used to instantiate and return a new fingerprint given the name
-fn new(name: String) -> Result<Box<dyn Fingerprinter>, FingerprintError> {
-    let name = name.as_str();
+pub fn build_fingerprint_attrs() -> HashMap<String, Attribute> {
+    let attrs: HashMap<String, Attribute> = [
+        (
+            String::from("driver.wasm.runtime"),
+            Attribute {
+                unit: "".to_string(),
+                value: Some(Value::StringVal(String::from("wasmtime"))),
+            },
+        ),
+        (
+            String::from("driver.wasm.runtime_package_version"),
+            Attribute {
+                unit: "".to_string(),
+                value: Some(Value::StringVal(String::from(PACKAGE_VERSION))),
+            },
+        ),
+    ]
+    .iter()
+    .cloned()
+    .collect();
 
+    attrs
+}
+
+// new is used to instantiate and return a new fingerprint given the name
+async fn new(name: &str) -> Result<Box<dyn Fingerprinter>, FingerprintError> {
     if name.is_empty() {
         return Err(FingerprintError::new(format!(
             "invalid fingerprinter specified: {}",
