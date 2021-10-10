@@ -10,9 +10,14 @@
 use tonic::transport::Server;
 use tonic_health::server::HealthReporter;
 
+// Alias nomad modules
+use crate::proto::hashicorp::nomad::plugins as nomad;
+use nomad::base::proto as base;
+use nomad::drivers::proto as drivers;
+
+use base::base_plugin_server::BasePluginServer;
 use driver::WasmDriver;
-use proto::hashicorp::nomad::plugins::base::proto::base_plugin_server::BasePluginServer;
-use proto::hashicorp::nomad::plugins::drivers::proto::driver_server::DriverServer;
+use drivers::driver_server::DriverServer;
 
 mod driver;
 mod fingerprint;

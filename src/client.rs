@@ -4,9 +4,13 @@ use env_logger;
 use log;
 // use log::LevelFilter;
 
-use proto::hashicorp::nomad::plugins::drivers::proto::driver_client::DriverClient;
-use proto::hashicorp::nomad::plugins::drivers::proto::FingerprintRequest;
-use proto::hashicorp::nomad::plugins::drivers::proto::{CapabilitiesRequest, DriverCapabilities};
+// Alias nomad modules
+use crate::proto::hashicorp::nomad::plugins as nomad;
+use nomad::drivers::proto as drivers;
+
+use drivers::driver_client::DriverClient;
+use drivers::FingerprintRequest;
+use drivers::{CapabilitiesRequest, DriverCapabilities};
 
 mod proto;
 

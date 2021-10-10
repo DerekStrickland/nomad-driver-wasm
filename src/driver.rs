@@ -13,17 +13,26 @@ use tonic::{Request, Response, Status, Streaming};
 // use log4rs::encode::pattern::PatternEncoder;
 use rmp_serde;
 
+// Alias nomad modules
+use crate::proto::hashicorp::nomad::plugins as nomad;
+use nomad::base::proto as base;
+use nomad::drivers::proto as drivers;
+use nomad::shared::hclspec;
+use nomad::shared::structs;
+
 use crate::fingerprint::fingerprinter::build_fingerprint_attrs;
 use crate::hclext;
-use crate::proto::hashicorp::nomad::plugins::base::proto::base_plugin_server::BasePlugin;
-use crate::proto::hashicorp::nomad::plugins::base::proto::{
+
+use base::base_plugin_server::BasePlugin;
+use base::{
     ConfigSchemaRequest, ConfigSchemaResponse, NomadConfig, PluginInfoRequest, PluginInfoResponse,
     PluginType, SetConfigRequest, SetConfigResponse,
 };
-use crate::proto::hashicorp::nomad::plugins::drivers::proto::driver_server::Driver;
-use crate::proto::hashicorp::nomad::plugins::drivers::proto::fingerprint_response::HealthState;
-use crate::proto::hashicorp::nomad::plugins::drivers::proto::network_isolation_spec::NetworkIsolationMode;
-use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
+
+use drivers::driver_server::Driver;
+use drivers::fingerprint_response::HealthState;
+use drivers::network_isolation_spec::NetworkIsolationMode;
+use drivers::{
     CapabilitiesRequest, CapabilitiesResponse, CreateNetworkRequest, CreateNetworkResponse,
     DestroyNetworkRequest, DestroyNetworkResponse, DestroyTaskRequest, DestroyTaskResponse,
     DriverCapabilities, DriverTaskEvent, ExecTaskRequest, ExecTaskResponse,
@@ -33,14 +42,25 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
     StopTaskResponse, TaskConfigSchemaRequest, TaskConfigSchemaResponse, TaskEventsRequest,
     TaskStatsRequest, TaskStatsResponse, WaitTaskRequest, WaitTaskResponse,
 };
-use crate::proto::hashicorp::nomad::plugins::shared::hclspec::{Default, Spec};
-use crate::proto::hashicorp::nomad::plugins::shared::structs::attribute::Value;
+use hclspec::{Default, Spec};
+use structs::attribute::Value;
 
+/// WasmDriver is the Nomad TaskDriver implementation for running wasm tasks.
 pub struct WasmDriver {
+    /// config_spec is the specification of the plugin's configuration
+    /// this is used to validate the configuration specified for the plugin
+    /// on the client. This is not global, but can be specified on a per-client basis.
     config_schema: Arc<Mutex<Spec>>,
-    driver_capabilities: DriverCapabilities,
+    /// capabilities returns the features or capabilities that the plugin provides.
+    capabilities: DriverCapabilities,
+    /// nomad_config is the client config from Nomad
     nomad_config: Arc<Mutex<NomadConfig>>,
+    // TODO: Can I safely remove this? Looks like I just need to set this value
+    // on the PluginInfoResponse from the constant. Possibly this might be used
+    // to see if Nomad's plugin api version has changed?
     plugin_api_version: Arc<Mutex<String>>,
+    /// plugin_info returns the configuration for the plugin, which will be requested
+    /// by Nomad during at least plugin loading.
     plugin_info: PluginInfoResponse,
 }
 
@@ -48,9 +68,9 @@ impl core::default::Default for WasmDriver {
     fn default() -> Self {
         WasmDriver {
             config_schema: Arc::new(Mutex::new(WasmDriver::default_config_spec())),
-            driver_capabilities: WasmDriver::default_driver_capabilities(),
+            capabilities: WasmDriver::default_capabilities(),
             nomad_config: Arc::new(Mutex::new(NomadConfig { driver: None })),
-            plugin_api_version: Arc::new(Mutex::new(String::from("0.1.0"))),
+            plugin_api_version: Arc::new(Mutex::new(String::from(API_VERSION))),
             plugin_info: WasmDriver::default_plugin_info(),
         }
     }
@@ -134,7 +154,7 @@ impl Driver for WasmDriver {
     ) -> Result<Response<CapabilitiesResponse>, Status> {
         // log::info!("Received CapabilitiesRequest");
         Ok(tonic::Response::new(CapabilitiesResponse {
-            capabilities: Some(WasmDriver::default_driver_capabilities()),
+            capabilities: Some(WasmDriver::default_capabilities()),
         }))
     }
 
@@ -354,8 +374,6 @@ impl Driver for WasmDriver {
 }
 
 impl WasmDriver {
-    // plugin_info returns the configuration for the plugin, which will be requested
-    // by Nomad during at least plugin loading.
     fn default_plugin_info() -> PluginInfoResponse {
         PluginInfoResponse {
             r#type: PluginType::Driver as i32,
@@ -365,13 +383,10 @@ impl WasmDriver {
         }
     }
 
-    // config_spec is the specification of the plugin's configuration
-    // this is used to validate the configuration specified for the plugin
-    // on the client. This is not global, but can be specified on a per-client basis.
     fn default_config_spec() -> Spec {
         let mut attrs: HashMap<String, Spec> = HashMap::new();
 
-        // flag for managing task driver enabled status
+        // Flag for managing task driver enabled status.
         attrs.insert(
             String::from("enabled"),
             hclext::default_spec(Default {
@@ -384,13 +399,13 @@ impl WasmDriver {
             }),
         );
 
-        // wasmtime runtime version
+        // Wasmtime runtime executable path.
         attrs.insert(
             String::from("wasm_runtime"),
             hclext::new_attr_spec(String::from("wasm_runtime"), String::from("string"), true),
         );
 
-        // interval for collections TaskStats
+        // Interval for collections TaskStats.
         attrs.insert(
             String::from("stats_interval"),
             hclext::new_attr_spec(
@@ -400,7 +415,7 @@ impl WasmDriver {
             ),
         );
 
-        // if set to false, driver will deny running privileged jobs
+        // If set to false, the driver will deny running privileged jobs.
         attrs.insert(
             String::from("allow_privileged"),
             hclext::new_default_spec(
@@ -413,7 +428,7 @@ impl WasmDriver {
             ),
         );
 
-        // provide authentication for a private registry
+        // Provide authentication for a private registry.
         let mut auth_map: HashMap<String, Spec> = HashMap::new();
         auth_map.insert(
             String::from("username"),
@@ -436,8 +451,7 @@ impl WasmDriver {
         hclext::new_object_spec(attrs)
     }
 
-    // capabilities returns the features or capabilities that the plugin provides.
-    fn default_driver_capabilities() -> DriverCapabilities {
+    fn default_capabilities() -> DriverCapabilities {
         DriverCapabilities {
             send_signals: true,
             exec: true,
@@ -455,24 +469,23 @@ impl WasmDriver {
     }
 }
 
-// PLUGIN_NAME is the name of the plugin
-// this is used for logging and (along with the version) for uniquely
-// identifying plugin binaries fingerprinted by the client
+/// PLUGIN_NAME is the name of the plugin. This is used for logging and (along
+/// with the version) for uniquely identifying plugin binaries fingerprinted by
+/// the client.
 pub const PLUGIN_NAME: &str = "nomad-driver-wasm";
 
-// // PLUGIN_VERSION allows the client to identify and use newer versions of
-// // an installed plugin
+/// PLUGIN_VERSION allows the client to identify and use newer versions of
+/// an installed plugin.
 pub const PLUGIN_VERSION: &str = "v0.1.0";
 
-// // FINGERPRINT_PERIOD is the interval at which the plugin will send
-// // fingerprint responses
+/// FINGERPRINT_PERIOD is the interval at which the plugin will send fingerprint
+/// responses.
 pub const FINGERPRINT_PERIOD: Duration = Duration::from_secs(30);
 
-// // TASK_HANDLE_VERSION is the version of task handle which this plugin sets
-// // and understands how to decode
-// // this is used to allow modification and migration of the task schema
-// // used by the plugin
+/// TASK_HANDLE_VERSION is the version of task handle which this plugin sets
+/// and understands how to decode. This is used to allow modification and migration
+/// of the task schema used by the plugin.
 pub const TASK_HANDLE_VERSION: u8 = 1;
 
-// API_VERSION is the version from the .proto file
+/// API_VERSION must match the version from the nomad/drivers/versions.go file.
 const API_VERSION: &str = "v0.1.0";
