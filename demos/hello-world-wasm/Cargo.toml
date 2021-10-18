@@ -1,0 +1,9 @@
+[package]
+name = "hello-world-wasm"
+version = "0.1.0"
+authors = ["DerekStrickland <1111455+DerekStrickland@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
+
+[workspace]

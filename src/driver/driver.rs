@@ -5,6 +5,7 @@ use crate::proto::hashicorp::nomad::plugins as nomad;
 use nomad::drivers::proto as drivers;
 use nomad::shared::structs;
 
+use crate::driver::config::task_config_schema;
 use crate::fingerprint::fingerprinter::build_fingerprint_attrs;
 use drivers::driver_server::Driver;
 use drivers::fingerprint_response::HealthState;
@@ -26,10 +27,7 @@ impl Driver for WasmDriver {
         &self,
         request: Request<TaskConfigSchemaRequest>,
     ) -> Result<Response<TaskConfigSchemaResponse>, Status> {
-        // log::info!("Received TaskConfigSchemaRequest");
-        Ok(tonic::Response::new(TaskConfigSchemaResponse {
-            spec: None,
-        }))
+        Ok(tonic::Response::new(task_config_schema()))
     }
 
     async fn capabilities(
@@ -55,8 +53,6 @@ impl Driver for WasmDriver {
         &self,
         request: Request<FingerprintRequest>,
     ) -> Result<Response<Self::FingerprintStream>, Status> {
-        // log::info!("Received FingerprintRequest");
-
         let (tx, rx) = tokio::sync::mpsc::channel(4);
 
         let attrs = build_fingerprint_attrs();
@@ -75,12 +71,6 @@ impl Driver for WasmDriver {
                 _ => log::info!("attribute {} is not a string", k),
             }
         }
-
-        // log::info!("health {}", fingerprint_response.health);
-        // log::info!(
-        //     "health_description {}",
-        //     fingerprint_response.health_description
-        // );
 
         tokio::spawn(async move {
             loop {
@@ -106,7 +96,6 @@ impl Driver for WasmDriver {
         &self,
         request: Request<StartTaskRequest>,
     ) -> Result<Response<StartTaskResponse>, Status> {
-        // log::info!("Received StartTaskRequest");
         Ok(tonic::Response::new(StartTaskResponse {
             result: 0,
             driver_error_msg: "".to_string(),

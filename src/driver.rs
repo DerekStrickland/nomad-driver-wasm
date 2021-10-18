@@ -6,12 +6,6 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tonic::{Request, Response, Status, Streaming};
 
-// use log;
-// use log::LevelFilter;
-// use log4rs::append::file::FileAppender;
-// use log4rs::config::{Appender, Config, Root};
-// use log4rs::encode::pattern::PatternEncoder;
-
 // Alias nomad modules
 use crate::proto::hashicorp::nomad::plugins as nomad;
 use nomad::base::proto as base;
@@ -26,6 +20,7 @@ use drivers::network_isolation_spec::NetworkIsolationMode;
 use drivers::DriverCapabilities;
 use hclspec::{Default, Spec};
 
+mod config;
 mod driver;
 mod plugin;
 
@@ -39,10 +34,6 @@ pub struct WasmDriver {
     capabilities: DriverCapabilities,
     /// nomad_config is the client config from Nomad
     nomad_config: Arc<Mutex<NomadConfig>>,
-    // TODO: Can I safely remove this? Looks like I just need to set this value
-    // on the PluginInfoResponse from the constant. Possibly this might be used
-    // to see if Nomad's plugin api version has changed?
-    plugin_api_version: Arc<Mutex<String>>,
     /// plugin_info returns the configuration for the plugin, which will be requested
     /// by Nomad during at least plugin loading.
     plugin_info: PluginInfoResponse,
@@ -54,7 +45,6 @@ impl core::default::Default for WasmDriver {
             config_schema: Arc::new(Mutex::new(WasmDriver::default_config_spec())),
             capabilities: WasmDriver::default_capabilities(),
             nomad_config: Arc::new(Mutex::new(NomadConfig { driver: None })),
-            plugin_api_version: Arc::new(Mutex::new(String::from(API_VERSION))),
             plugin_info: WasmDriver::default_plugin_info(),
         }
     }
@@ -71,10 +61,10 @@ impl WasmDriver {
     }
 
     fn default_config_spec() -> Spec {
-        let mut attrs: HashMap<String, Spec> = HashMap::new();
+        let mut config_spec: HashMap<String, Spec> = HashMap::new();
 
         // Flag for managing task driver enabled status.
-        attrs.insert(
+        config_spec.insert(
             String::from("enabled"),
             hclext::default_spec(Default {
                 primary: Some(Box::from(hclext::new_attr_spec(
@@ -87,13 +77,13 @@ impl WasmDriver {
         );
 
         // Wasmtime runtime executable path.
-        attrs.insert(
+        config_spec.insert(
             String::from("wasm_runtime"),
             hclext::new_attr_spec(String::from("wasm_runtime"), String::from("string"), true),
         );
 
         // Interval for collections TaskStats.
-        attrs.insert(
+        config_spec.insert(
             String::from("stats_interval"),
             hclext::new_attr_spec(
                 String::from("stats_interval"),
@@ -103,7 +93,7 @@ impl WasmDriver {
         );
 
         // If set to false, the driver will deny running privileged jobs.
-        attrs.insert(
+        config_spec.insert(
             String::from("allow_privileged"),
             hclext::new_default_spec(
                 hclext::new_attr_spec(
@@ -133,9 +123,9 @@ impl WasmDriver {
             hclext::new_object_spec(auth_map),
         );
 
-        attrs.insert(String::from("auth"), auth_block);
+        config_spec.insert(String::from("auth"), auth_block);
 
-        hclext::new_object_spec(attrs)
+        hclext::new_object_spec(config_spec)
     }
 
     fn default_capabilities() -> DriverCapabilities {

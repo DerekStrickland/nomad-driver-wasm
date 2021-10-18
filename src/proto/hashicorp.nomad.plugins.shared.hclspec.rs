@@ -244,7 +244,7 @@ pub struct BlockSet {
 ///```hcl
 ///BlockMap {
 ///name = "log_file"
-///labels = ["filename"]
+///labels = \["filename"\]
 ///
 ///Object {
 ///Attr "level" {
@@ -298,7 +298,7 @@ pub struct BlockMap {
 ///`Literal` spec blocks accept the following argument:
 ///
 /// `value` (required) - The value to return. This attribute may be an expression
-///that uses [functions](#spec-definition-functions).
+///that uses \[functions\](#spec-definition-functions).
 ///
 ///`Literal` is a leaf spec type, so no nested spec blocks are permitted.
 #[derive(serde::Deserialize, Clone, PartialEq, ::prost::Message)]

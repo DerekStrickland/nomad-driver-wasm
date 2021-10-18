@@ -45,11 +45,6 @@ impl BasePlugin for WasmDriver {
             return Err(Status::invalid_argument("msgpack_config"));
         }
 
-        if request_ref.plugin_api_version.is_empty() {
-            // log::error!("plugin_api_version is required");
-            return Err(Status::invalid_argument("plugin_api_version"));
-        }
-
         let config_schema = Arc::clone(&self.config_schema);
         let mut cs = config_schema.lock().unwrap();
 
@@ -63,10 +58,6 @@ impl BasePlugin for WasmDriver {
             Some(c) => *nc = c,
             None => log::error!("nomad_config is required but passed guard clause"),
         }
-
-        let plugin_api_version = Arc::clone(&self.plugin_api_version);
-        let mut pav = plugin_api_version.lock().unwrap();
-        *pav = request_ref.clone().plugin_api_version;
 
         Ok(tonic::Response::new(SetConfigResponse {}))
     }
