@@ -16,6 +16,7 @@ use crate::hclext;
 
 use base::{NomadConfig, PluginInfoResponse, PluginType};
 
+use crate::task::TaskController;
 use drivers::network_isolation_spec::NetworkIsolationMode;
 use drivers::DriverCapabilities;
 use hclspec::{Default, Spec};
@@ -26,6 +27,8 @@ mod plugin;
 
 /// WasmDriver is the Nomad TaskDriver implementation for running wasm tasks.
 pub struct WasmDriver {
+    // Task
+    controller: Arc<Mutex<TaskController>>,
     /// config_spec is the specification of the plugin's configuration
     /// this is used to validate the configuration specified for the plugin
     /// on the client. This is not global, but can be specified on a per-client basis.
@@ -42,6 +45,9 @@ pub struct WasmDriver {
 impl core::default::Default for WasmDriver {
     fn default() -> Self {
         WasmDriver {
+            controller: Arc::new(Mutex::new(TaskController::default(String::from(
+                "local:registry",
+            )))),
             config_schema: Arc::new(Mutex::new(WasmDriver::default_config_spec())),
             capabilities: WasmDriver::default_capabilities(),
             nomad_config: Arc::new(Mutex::new(NomadConfig { driver: None })),
