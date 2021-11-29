@@ -45,9 +45,7 @@ pub struct WasmDriver {
 impl core::default::Default for WasmDriver {
     fn default() -> Self {
         WasmDriver {
-            controller: Arc::new(Mutex::new(TaskController::default(String::from(
-                "local:registry",
-            )))),
+            controller: Arc::new(Mutex::new(TaskController::default())),
             config_schema: Arc::new(Mutex::new(WasmDriver::default_config_spec())),
             capabilities: WasmDriver::default_capabilities(),
             nomad_config: Arc::new(Mutex::new(NomadConfig { driver: None })),

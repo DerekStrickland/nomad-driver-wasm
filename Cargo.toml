@@ -12,6 +12,7 @@ futures-core = "0.3"
 futures-util = "0.3"
 log = "0.4.14"
 log4rs = "1.0.0"
+oci-distribution = "0.8.0"
 prost = "0.8.0"
 prost-types = "0.8.0"
 rmp-serde = "0.15.4"
@@ -23,6 +24,7 @@ tokio-stream = "0.1"
 tokio-test = "0.4.2"
 tonic = "0.5.2"
 tonic-health = "0.4.1"
+wasi-provider = "1.0.0"
 wasmtime = "0.30.0"
 
 [build-dependencies]
@@ -37,6 +39,7 @@ prost-types = "0.8.0"
 #prost = { git = "https://github.com/tokio-rs/prost", rev = "b7e4846dbcb52aeb8defbfde4605b1b975a1504d"}
 ## prost = { path = '../prost' }
 #prost-build = { path = '../prost/prost-build', default-features = false }
+wasi-provider = { path = '../krustlet/crates/wasi-provider' }
 
 [patch.crates-io]
 prost = { git = "https://github.com/tokio-rs/prost" }
