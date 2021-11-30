@@ -1,25 +1,27 @@
-use super::{Pin, Request, Response, Status, Streaming, WasmDriver, FINGERPRINT_PERIOD};
+
+use super::{Arc, Pin, Request, Response, Status, Streaming, WasmDriver, FINGERPRINT_PERIOD};
 
 // Alias nomad modules
 use crate::proto::hashicorp::nomad::plugins as nomad;
 use nomad::drivers::proto as drivers;
-use nomad::shared::structs;
 
+// Import crate types
 use crate::driver::config::task_config_schema;
 use crate::fingerprint::fingerprinter::build_fingerprint_attrs;
+use crate::task::ExecOptions;
 use drivers::driver_server::Driver;
 use drivers::fingerprint_response::HealthState;
 use drivers::{
     CapabilitiesRequest, CapabilitiesResponse, CreateNetworkRequest, CreateNetworkResponse,
     DestroyNetworkRequest, DestroyNetworkResponse, DestroyTaskRequest, DestroyTaskResponse,
     DriverTaskEvent, ExecTaskRequest, ExecTaskResponse, ExecTaskStreamingRequest,
-    ExecTaskStreamingResponse, FingerprintRequest, FingerprintResponse, InspectTaskRequest,
+    ExecTaskStreamingResponse, ExitResult, FingerprintRequest, FingerprintResponse, InspectTaskRequest,
     InspectTaskResponse, RecoverTaskRequest, RecoverTaskResponse, SignalTaskRequest,
     SignalTaskResponse, StartTaskRequest, StartTaskResponse, StopTaskRequest, StopTaskResponse,
     TaskConfigSchemaRequest, TaskConfigSchemaResponse, TaskEventsRequest, TaskStatsRequest,
     TaskStatsResponse, WaitTaskRequest, WaitTaskResponse,
 };
-use structs::attribute::Value;
+use nomad::shared::structs::attribute::Value;
 
 #[tonic::async_trait]
 impl Driver for WasmDriver {
@@ -96,6 +98,120 @@ impl Driver for WasmDriver {
         &self,
         request: Request<StartTaskRequest>,
     ) -> Result<Response<StartTaskResponse>, Status> {
+        // Get the task from the request
+        let task = request.get_ref().task.unwrap();
+        // Guard against already running task.
+        if self.is_running(task.id) {
+            Err(format!("task with ID {} already started", task.id))
+        }
+
+        // Deserialize the Task config from the MessagePack format.
+        var driverConfig TaskConfig
+        if err := cfg.DecodeDriverConfig(&driverConfig); err != nil {
+            return nil,
+            nil,
+            fmt.Errorf("failed to decode driver config: %v",
+            err)
+        }
+
+        // Create the module config
+        containerConfig := ContainerConfig{}
+
+        if driverConfig.HostNetwork && cfg.NetworkIsolation != nil {
+            return nil, nil, fmt.Errorf("host_network and bridge network mode are mutually exclusive, and only one of them should be set")
+        }
+
+        if err := driverConfig.setVolumeMounts(cfg); err != nil {
+            return nil, nil, err
+        }
+
+        d.logger.Info("starting task", "driver_cfg", hclog.Fmt("%+v", driverConfig))
+        handle := drivers.NewTaskHandle(taskHandleVersion)
+        handle.Config = cfg
+
+        // https://www.nomadproject.io/docs/drivers/docker#container-name
+        containerName := cfg.Name + "-" + cfg.AllocID
+        containerConfig.ContainerName = containerName
+
+        var err error
+        containerConfig.Image, err = d.pullImage(driverConfig.Image, driverConfig.ImagePullTimeout, &driverConfig.Auth)
+        if err != nil {
+            return nil, nil, fmt.Errorf("Error in pulling image %s: %v", driverConfig.Image, err)
+        }
+
+        d.logger.Info(fmt.Sprintf("Successfully pulled %s image\n", containerConfig.Image.Name()))
+
+        // Setup environment variables.
+        for key, val := range cfg.Env {
+            if skipOverride(key) {
+                continue
+            }
+            containerConfig.Env = append(containerConfig.Env, fmt.Sprintf("%s=%s", key, val))
+        }
+
+        // Setup source paths for secrets, task and alloc directories.
+        containerConfig.SecretsDirSrc = cfg.TaskDir().SecretsDir
+        containerConfig.TaskDirSrc = cfg.TaskDir().LocalDir
+        containerConfig.AllocDirSrc = cfg.TaskDir().SharedAllocDir
+
+        // Setup destination paths for secrets, task and alloc directories.
+        containerConfig.SecretsDirDest = cfg.Env[taskenv.SecretsDir]
+        containerConfig.TaskDirDest = cfg.Env[taskenv.TaskLocalDir]
+        containerConfig.AllocDirDest = cfg.Env[taskenv.AllocDir]
+
+        containerConfig.ContainerSnapshotName = fmt.Sprintf("%s-snapshot", containerName)
+        if cfg.NetworkIsolation != nil && cfg.NetworkIsolation.Path != "" {
+            containerConfig.NetworkNamespacePath = cfg.NetworkIsolation.Path
+        }
+
+        // memory and cpu are coming from the resources stanza of the nomad job.
+        // https://www.nomadproject.io/docs/job-specification/resources
+        containerConfig.MemoryLimit = cfg.Resources.NomadResources.Memory.MemoryMB * 1024 * 1024
+        containerConfig.MemoryHardLimit = cfg.Resources.NomadResources.Memory.MemoryMaxMB * 1024 * 1024
+        containerConfig.CPUShares = cfg.Resources.LinuxResources.CPUShares
+
+        container, err := d.createContainer(&containerConfig, &driverConfig)
+        if err != nil {
+            return nil, nil, fmt.Errorf("Error in creating container: %v", err)
+        }
+
+        d.logger.Info(fmt.Sprintf("Successfully created container with name: %s\n", containerName))
+        task, err := d.createTask(container, cfg.StdoutPath, cfg.StderrPath)
+        if err != nil {
+            return nil, nil, fmt.Errorf("Error in creating task: %v", err)
+        }
+
+        d.logger.Info(fmt.Sprintf("Successfully created task with ID: %s\n", task.ID()))
+
+        h := &taskHandle{
+            taskConfig:     cfg,
+            procState:      drivers.TaskStateRunning,
+            startedAt:      time.Now().Round(time.Millisecond),
+            logger:         d.logger,
+            totalCpuStats:  stats.NewCpuStats(),
+            userCpuStats:   stats.NewCpuStats(),
+            systemCpuStats: stats.NewCpuStats(),
+            container:      container,
+            containerName:  containerName,
+            task:           task,
+        }
+
+        driverState := TaskState{
+            StartedAt:     h.startedAt,
+            ContainerName: containerName,
+            StdoutPath:    cfg.StdoutPath,
+            StderrPath:    cfg.StderrPath,
+        }
+
+        if err := handle.SetDriverState(&driverState); err != nil {
+            return nil, nil, fmt.Errorf("failed to set driver state: %v", err)
+        }
+
+        d.tasks.Set(cfg.ID, h)
+
+        go h.run(d.ctxContainerd)
+        return handle, nil, nil
+
         Ok(tonic::Response::new(StartTaskResponse {
             result: 0,
             driver_error_msg: "".to_string(),
@@ -197,12 +313,38 @@ impl Driver for WasmDriver {
         &self,
         request: Request<ExecTaskRequest>,
     ) -> Result<Response<ExecTaskResponse>, Status> {
-        // log::info!("Received ExecTaskRequest");
-        Ok(tonic::Response::new(ExecTaskResponse {
-            stdout: vec![],
-            stderr: vec![],
-            result: None,
-        }))
+        // TODO: This needs to handle replacing a task vs. launching a new one.
+        // TODO: Refactor all this to template function to reduce boilerplate.
+        let task_id = request.task_id.clone().as_str();
+        if task_id.is_empty() {
+            ExecTaskResponse {
+                stdout: vec![],
+                stderr: vec![],
+                result: exit_result(ExitCodes::InvalidArgument),
+            }
+        }
+
+        let tasks = Arc::clone(&self.tasks);
+        let handles = tasks.lock().unwrap();
+
+        if !handles.contains_key(task_id) {
+            ExecTaskResponse {
+                stdout: vec![],
+                stderr: vec![],
+                result: exit_result(ExitCodes::CommandNotFound),
+            }
+        }
+
+        let task_handle = handles.get(request.task_id.as_str())?;
+
+        // TODO: This isn't right. Just here to compile.
+        Ok(Response::new(task_handle.exec(&ExecOptions {
+            command: vec![],
+            tty: false,
+            stdin: std::io::stdin(),
+            stdout: std::io::stdout(),
+            stderr: std::io::stderr(),
+        })))
     }
 
     type ExecTaskStreamingStream = Pin<
@@ -244,4 +386,23 @@ impl Driver for WasmDriver {
         // log::info!("Received DestroyNetworkRequest");
         Ok(tonic::Response::new(DestroyNetworkResponse {}))
     }
+}
+
+// Adapted from https://tldp.org/LDP/abs/html/exitcodes.html
+pub enum ExitCodes {
+    Error = 1,             // Catchall for general errors
+    BuiltinMisuse = 2,     // Misuse of shell builtins (according to Bash documentation)
+    CannotExecute = 126,   // Command invoked cannot execute
+    CommandNotFound = 127, // “command not found”
+    InvalidArgument = 128, // Invalid argument to exit
+    Exited = 130,          // Terminated by Control-C
+    OutOfRange = 255,      // Exit status out of range
+}
+
+fn exit_result(exit_code: ExitCodes) -> Option<ExitResult> {
+    Some(ExitResult {
+        exit_code: exit_code as i32,
+        signal: 0,
+        oom_killed: false,
+    })
 }

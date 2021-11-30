@@ -16,7 +16,7 @@ mod fingerprint;
 mod hclext;
 mod proto;
 mod task;
-mod wasi;
+mod task_kernel;
 
 async fn driver_service_status(mut reporter: HealthReporter) {
     println!("Health check received");

@@ -1,5 +1,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+// TODO: I'm experimenting with embedding the WASI Runtime on the task directly.
+// It may prove more prudent to separate this out.
+use wasmtime::*;
+use wasmtime_wasi::sync::WasiCtxBuilder;
 
 use crate::proto::google::protobuf::Duration;
 use crate::proto::hashicorp::nomad::plugins::drivers::proto::start_task_response as start_task;
@@ -12,126 +16,71 @@ use crate::proto::hashicorp::nomad::plugins::drivers::proto::{
     TaskEventsRequest, TaskHandle, TaskStatsResponse, TaskStatus,
 };
 use crate::proto::hashicorp::nomad::plugins::shared::hclspec::Spec;
-use crate::wasi;
+use crate::task_kernel;
+use std::path::Path;
 
-pub struct TaskController {
-    pub registry_url: String,
-    pub tasks: Arc<Mutex<HashMap<String, Task>>>,
-}
-
-impl TaskController {
-    pub fn default() -> TaskController {
-        TaskController {
-            registry_url: String::from("0.0.0.0:5000"),
-            tasks: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-
-    pub fn new(registry_url: String) -> TaskController {
-        TaskController {
-            registry_url,
-            tasks: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-
-    pub fn create_network(request: CreateNetworkRequest) -> CreateNetworkResponse {
-        CreateNetworkResponse {
-            isolation_spec: None,
-            created: false,
-        }
-    }
-
-    pub fn destroy(request: DestroyTaskRequest) -> DestroyTaskResponse {
-        DestroyTaskResponse {}
-    }
-
-    pub fn destroy_network(request: DestroyNetworkRequest) -> DestroyNetworkResponse {
-        DestroyNetworkResponse {}
-    }
-
-    pub fn exec(&self, request: ExecTaskRequest) -> ExecTaskResponse {
-        // TODO: Refactor all this to template function to reduce boilerplate.
-        let task_id = request.task_id.clone().as_str();
-        if task_id.is_empty() {
-            ExecTaskResponse {
-                stdout: vec![],
-                stderr: vec![],
-                result: exit_result(ExitCodes::InvalidArgument),
-            }
-        }
-
-        let tasks = Arc::clone(&self.tasks);
-        let handles = tasks.lock().unwrap();
-        if !handles.contains_key(task_id) {
-            ExecTaskResponse {
-                stdout: vec![],
-                stderr: vec![],
-                result: exit_result(ExitCodes::CommandNotFound),
-            }
-        }
-
-        let task_handle = handles.get(request.task_id.as_str())?;
-
-        task_handle.exec();
-
-        ExecTaskResponse {
-            stdout: vec![],
-            stderr: vec![],
-            result: None,
-        }
-    }
-
-    pub fn exec_streaming(request: ExecTaskStreamingRequest) -> ExecTaskStreamingResponse {
-        ExecTaskStreamingResponse {
-            stdout: None,
-            stderr: None,
-            exited: false,
-            result: None,
-        }
-    }
-
-    pub fn inspect(request: InspectTaskRequest) -> InspectTaskResponse {
-        InspectTaskResponse {
-            task: None,
-            driver: None,
-            network_override: None,
-        }
-    }
-
-    pub fn recover(request: RecoverTaskRequest) -> RecoverTaskResponse {
-        RecoverTaskResponse {}
-    }
-}
-
-fn exit_result(exit_code: ExitCodes) -> Option<ExitResult> {
-    Some(ExitResult {
-        exit_code:  exit_code as i32,
-        signal: 0,
-        oom_killed: false,
-    })
-}
-
-// Adapted from https://tldp.org/LDP/abs/html/exitcodes.html
-pub enum ExitCodes {
-    Error = 1, // Catchall for general errors
-    BuiltinMisuse = 2, // Misuse of shell builtins (according to Bash documentation)
-    CannotExecute = 126, // Command invoked cannot execute
-    CommandNotFound = 127, // “command not found”
-    InvalidArgument = 128, // Invalid argument to exit
-    Exited = 130,  // Terminated by Control-C
-    OutOfRange = 255 // Exit status out of range
-}
 
 pub struct Task {
+    pub config: TaskConfig,
     pub handle: Option<TaskHandle>,
     pub config_schema: Spec,
     pub status: Option<TaskStatus>,
     pub driver_status: Option<TaskDriverStatus>,
     pub timeout: Option<Duration>,
     pub network_override: Option<NetworkOverride>,
+    store: Store<Task>,
+    engine: Engine,
+    linker: Linker<Task>,
 }
 
 impl Task {
+    fn new(config: TaskConfig) -> Self {
+        // Define the WASI functions globally on the `Config`.
+        let engine = Engine::default();
+        let mut linker = Linker::new(&engine);
+        wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
+
+        // Create a WASI context and put it in a Store; all instances in the store
+        // share this context. `WasiCtxBuilder` provides a number of ways to
+        // configure what the target program will have access to.
+        let wasi = WasiCtxBuilder::new()
+            .inherit_stdio()
+            .inherit_args()?
+            .build();
+
+        // Create the store instance
+        let mut store = Store::new(&engine, wasi);
+
+        // Return the initialized runtime.
+        Task {
+            config,
+            handle: None,
+            config_schema: Spec { block: None },
+            status: None,
+            driver_status: None,
+            timeout: None,
+            network_override: None,
+            store,
+            engine,
+            linker,
+        }
+    }
+
+    fn load_wasm_module(&self, module_name: String, module_path: Path) -> Result<(), E> {
+        // TODO: Retrieve from the OCI registry.
+        // Instantiate our module with the imports we've created, and run it.
+        let module = Module::from_file(&engine, module_path)?;
+
+        // Link the module by name to the store instance.
+        linker.module(&mut store, module_name.as_str(), &module)?;
+        linker
+            .get_default(&mut store, "")?
+            .typed::<(), (), _>(&store)?
+            .call(&mut store, ())?;
+
+        Ok(())
+    }
+
     // exec launches a new wasmtime task.
     pub fn exec(&self, opts: &ExecOptions) -> ExecTaskResponse {
         spec, err := h.container.Spec(ctxContainerd)

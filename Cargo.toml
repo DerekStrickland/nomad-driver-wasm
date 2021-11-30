@@ -55,4 +55,4 @@ path = "src/server.rs"
 # client binary
 [[bin]]
 name = "client"
-path = "src/client.rs"
+path = "src/test_client.rs"

@@ -6,20 +6,21 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tonic::{Request, Response, Status, Streaming};
 
+use crate::hclext;
+use crate::task_kernel;
+
 // Alias nomad modules
 use crate::proto::hashicorp::nomad::plugins as nomad;
+use crate::task;
 use nomad::base::proto as base;
 use nomad::drivers::proto as drivers;
-use nomad::shared::hclspec;
-
-use crate::hclext;
 
 use base::{NomadConfig, PluginInfoResponse, PluginType};
-
-use crate::task::TaskController;
 use drivers::network_isolation_spec::NetworkIsolationMode;
 use drivers::DriverCapabilities;
 use hclspec::{Default, Spec};
+use nomad::shared::hclspec;
+use task::Task;
 
 mod config;
 mod driver;
@@ -27,8 +28,7 @@ mod plugin;
 
 /// WasmDriver is the Nomad TaskDriver implementation for running wasm tasks.
 pub struct WasmDriver {
-    // Task
-    controller: Arc<Mutex<TaskController>>,
+    tasks: Arc<Mutex<HashMap<String, Task>>>,
     /// config_spec is the specification of the plugin's configuration
     /// this is used to validate the configuration specified for the plugin
     /// on the client. This is not global, but can be specified on a per-client basis.
@@ -45,7 +45,7 @@ pub struct WasmDriver {
 impl core::default::Default for WasmDriver {
     fn default() -> Self {
         WasmDriver {
-            controller: Arc::new(Mutex::new(TaskController::default())),
+            tasks: Arc::new(Mutex::new(HashMap::default())),
             config_schema: Arc::new(Mutex::new(WasmDriver::default_config_spec())),
             capabilities: WasmDriver::default_capabilities(),
             nomad_config: Arc::new(Mutex::new(NomadConfig { driver: None })),
@@ -55,6 +55,18 @@ impl core::default::Default for WasmDriver {
 }
 
 impl WasmDriver {
+    // Check to see if a task with the given id is already running.
+    fn is_running(&self, task_id: String) -> bool {
+        if task_id.is_empty() {
+            false
+        }
+
+        let tasks = Arc::clone(&self.tasks);
+        let handles = tasks.lock().unwrap();
+
+        handles.contains_key(task_id.as_str())
+    }
+
     fn default_plugin_info() -> PluginInfoResponse {
         PluginInfoResponse {
             r#type: PluginType::Driver as i32,
@@ -80,10 +92,17 @@ impl WasmDriver {
             }),
         );
 
+        // TODO: This might not be needed since we are embedding the wasm crates.
         // Wasmtime runtime executable path.
         config_spec.insert(
             String::from("wasm_runtime"),
             hclext::new_attr_spec(String::from("wasm_runtime"), String::from("string"), true),
+        );
+
+        // URI to the OCI registry hosting wasm-to-oci modules.
+        config_spec.insert(
+            String::from("registry_uri"),
+            hclext::new_attr_spec(String::from("registry_uri"), String::from("string"), true),
         );
 
         // Interval for collections TaskStats.
